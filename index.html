@@ -1,174 +1,129 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#07080b" />
-  <title>Spinning Kartel | Indoor Cycling Mossel Bay</title>
-  <meta name="description" content="Book your bike at Spinning Kartel, Mossel Bay. 20 bikes per class. High-energy indoor cycling." />
-  <link rel="icon" href="assets/logo.webp" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <title>Spinning Kartel | Book a Ride</title>
+  <meta name="description" content="Book a Spinning Kartel class and see live availability before you book.">
+  <link rel="stylesheet" href="site.css">
 </head>
 <body>
-  <div class="grain"></div>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="Spinning Kartel home">
-      <img src="assets/logo.webp" alt="Spinning Kartel logo" />
-      <span class="brand-copy"><strong>SPINNING</strong><strong>KARTEL</strong></span>
-    </a>
-    <nav class="nav" aria-label="Primary navigation">
-      <a href="#rides">Rides</a>
-      <a href="#experience">The Studio</a>
-      <a href="#location">Location</a>
-    </nav>
-    <a class="button button-small" href="#rides">Book your bike</a>
-  </header>
+<header class="public-header">
+  <a class="brand" href="#top">
+    <span class="brand-mark">SK</span>
+    <span class="brand-copy"><strong>SPINNING KARTEL</strong><small>Indoor cycling studio</small></span>
+  </a>
+  <nav>
+    <a href="#rides">Classes</a>
+    <a href="#passes">Passes</a>
+    <a href="#how">How it works</a>
+  </nav>
+  <a class="pill dark" href="#rides">BOOK A RIDE</a>
+</header>
 
-  <main id="top">
-    <section class="hero">
-      <img class="hero-image" src="assets/studio.webp" alt="Spinning Kartel neon indoor cycling studio" />
-      <div class="hero-shade"></div>
-      <div class="hero-content shell">
-        <div class="eyebrow"><span></span>MOSSEL BAY · INDOOR CYCLING</div>
-        <h1>20 BIKES.<br><em>ONE KARTEL.</em></h1>
-        <p class="hero-copy">High-energy rides. Loud music. Zero wasted time. Pick a session, secure your bike and show up ready to work.</p>
-        <div class="hero-actions">
-          <a href="#rides" class="button">Book your session <span>↗</span></a>
-          <a href="#experience" class="text-link">See the studio <span>↓</span></a>
-        </div>
-        <div class="hero-pills" aria-label="Studio highlights">
-          <span>20 bikes max</span><span>Instant confirmation</span><span>Walk-ins if space remains</span>
-        </div>
+<main id="top">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">SPINNING KARTEL</p>
+      <h1>Ride.<br>Train.<br>Get stronger.</h1>
+      <p class="lead">Choose a class, see availability before you book, and secure your bike online.</p>
+      <div class="hero-actions">
+        <a class="pill dark" href="#rides">SEE NEXT CLASSES</a>
+        <a class="simple-link" href="#passes">Class packs & membership →</a>
       </div>
-      <div class="hero-graffiti">RIDE / SWEAT / REPEAT</div>
-    </section>
-
-    <section id="rides" class="rides section shell">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow"><span></span>BOOK A RIDE</div>
-          <h2>Choose your session.</h2>
-        </div>
-        <div class="date-control">
-          <label for="rideDate">Date</label>
-          <input id="rideDate" type="date" />
-        </div>
-      </div>
-
-      <div class="booking-grid">
-        <div>
-          <div id="classList" class="class-list" aria-live="polite"></div>
-          <p class="micro-note">Each session is capped at <strong>20 riders</strong>. A bike is only secured once payment is completed.</p>
-        </div>
-
-        <aside class="booking-card" id="bookingCard">
-          <div class="booking-card-head">
-            <span class="booking-step">01</span>
-            <div><small>YOUR RIDE</small><h3>Reserve a bike</h3></div>
-          </div>
-          <form id="bookingForm">
-            <label>Selected session
-              <div id="selectedSession" class="selected-session">Choose a class on the left</div>
-            </label>
-            <div class="two-col">
-              <label>First name<input id="firstName" autocomplete="given-name" placeholder="Your name" required /></label>
-              <label>Mobile<input id="mobile" inputmode="tel" autocomplete="tel" placeholder="082 000 0000" required /></label>
-            </div>
-            <label>Email<input id="email" type="email" autocomplete="email" placeholder="you@email.com" required /></label>
-            <div class="booking-summary">
-              <span>1 bike</span><strong id="bookingPrice">R120</strong>
-            </div>
-            <button class="button button-full" type="submit">Continue to payment <span>→</span></button>
-            <p class="secure-line">🔒 Secure checkout · Confirmation after payment</p>
-          </form>
-        </aside>
-      </div>
-    </section>
-
-    <section id="experience" class="experience section">
-      <div class="shell">
-        <div class="section-heading split-heading">
-          <div>
-            <div class="eyebrow"><span></span>THE EXPERIENCE</div>
-            <h2>Not a quiet little cardio class.</h2>
-          </div>
-          <p>Dark room. Big sound. Colour, energy and a coach driving the room. Twenty bikes keeps it personal enough to feel the room — and busy enough to bring the atmosphere.</p>
-        </div>
-        <div class="experience-media">
-          <img src="assets/class.webp" alt="Spinning Kartel indoor cycling class in progress" />
-          <div class="stamp">WE DON'T<br>FOLLOW<br>THE CULTURE.<br><b>WE BUILD IT.</b></div>
-        </div>
-        <div class="stats-strip">
-          <div><b>20</b><span>bikes per class</span></div>
-          <div><b>1</b><span>bike per paid booking</span></div>
-          <div><b>0</b><span>overbooked sessions</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="how section shell">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow"><span></span>SIMPLE ON PURPOSE</div>
-          <h2>Book. Pay. Ride.</h2>
-        </div>
-      </div>
-      <div class="steps">
-        <article><span>01</span><h3>Pick a session</h3><p>See live availability and choose the ride that works for you.</p></article>
-        <article><span>02</span><h3>Pay online</h3><p>Your booking is only confirmed once payment succeeds.</p></article>
-        <article><span>03</span><h3>Your bike is yours</h3><p>When 20 bikes are taken, the class closes automatically.</p></article>
-        <article><span>04</span><h3>Walk-ins welcome</h3><p>If a class still has open bikes, we can add you at the studio before it starts.</p></article>
-      </div>
-    </section>
-
-    <section id="location" class="location section">
-      <div class="shell location-grid">
-        <div class="location-copy">
-          <div class="eyebrow"><span></span>FIND THE KARTEL</div>
-          <h2>Spinning Kartel<br>Mossel Bay.</h2>
-          <p>The studio is built for fast, high-energy sessions in a compact 20-bike room.</p>
-          <div class="contact-list">
-            <div><small>LOCATION</small><strong>Mossel Bay, Western Cape</strong></div>
-            <div><small>INSTAGRAM</small><strong>@spinningkartel</strong></div>
-            <div><small>BOOKINGS</small><strong>Online first · walk-ins subject to space</strong></div>
-          </div>
-          <a href="#rides" class="button">Book your bike <span>↗</span></a>
-        </div>
-        <div class="location-photo-wrap">
-          <img src="assets/storefront.webp" alt="Spinning Kartel storefront" />
-          <div class="photo-label">THE KARTEL · MOSSEL BAY</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="bike-detail section shell">
-      <div class="bike-detail-card">
-        <img src="assets/bikes.webp" alt="Spinning Kartel Matrix indoor cycling bikes" />
-        <div>
-          <div class="eyebrow"><span></span>YOUR MACHINE</div>
-          <h2>Twenty bikes.<br>No twenty-first.</h2>
-          <p>Every paid booking takes one physical bike out of inventory. When the session reaches 20 riders, online booking closes automatically.</p>
-          <a href="#rides" class="text-link">See available rides <span>↑</span></a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="shell footer-grid">
-      <div class="footer-brand"><img src="assets/logo.webp" alt="" /><strong>SPINNING KARTEL</strong><small>MOSSEL BAY · INDOOR CYCLING</small></div>
-      <div><strong>RIDE HARD.</strong><strong>BOOK FAST.</strong></div>
-      <div><small>Prototype booking site</small><span>Payment integration ready</span></div>
     </div>
-  </footer>
 
-  <div class="mobile-bookbar"><a href="#rides" class="button button-full">Book a bike</a></div>
+    <aside class="next-rides">
+      <div class="section-top tight">
+        <div>
+          <p class="eyebrow light">NEXT RIDES</p>
+          <h2>Book your bike</h2>
+        </div>
+        <a href="#rides">View all</a>
+      </div>
+      <div id="homeSchedule" class="home-schedule"></div>
+      <p class="live-caption"><i></i><span id="availabilitySource">Demo availability — Booklink becomes the live source at launch.</span></p>
+    </aside>
+  </section>
 
-  <dialog id="checkoutDialog">
-    <button class="dialog-close" id="dialogClose" aria-label="Close">×</button>
-    <div id="checkoutContent"></div>
-  </dialog>
+  <section class="rides" id="rides">
+    <div class="section-top">
+      <div>
+        <p class="eyebrow light">CLASS SCHEDULE</p>
+        <h2>Upcoming rides</h2>
+      </div>
+      <p>Online bookings close <strong>20 minutes before class</strong>. After that, walk-ins are welcome subject to bike availability.</p>
+    </div>
 
-  <script src="app.js"></script>
+    <div id="scheduleGrid" class="schedule-grid"></div>
+
+    <div class="booklink-frame">
+      <div>
+        <p class="eyebrow">LIVE BOOKING</p>
+        <h3>Booklink booking area</h3>
+        <p>This is where the studio's official Booklink inline booking widget will sit. Booklink remains the authority for capacity, rosters and payments.</p>
+      </div>
+      <a id="booklinkOpen" class="pill dark" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK DEMO</a>
+    </div>
+  </section>
+
+  <section class="passes" id="passes">
+    <div class="section-top dark-text">
+      <div>
+        <p class="eyebrow">WAYS TO RIDE</p>
+        <h2>Pay once, buy a pack, or join monthly.</h2>
+      </div>
+    </div>
+
+    <div class="pass-grid">
+      <article class="pass-card">
+        <span class="kicker">DROP-IN</span>
+        <h3>One class</h3>
+        <p>Choose a class and pay through Booklink → PayFast.</p>
+        <a href="#rides">Book a class →</a>
+      </article>
+
+      <article class="pass-card featured">
+        <span class="kicker">PREPAID</span>
+        <h3>Class packs</h3>
+        <p>Buy a prepaid Booklink package and use your personal package link whenever you want to reserve a bike.</p>
+        <button class="link-button" id="packageHelpBtn">I already have a pack →</button>
+      </article>
+
+      <article class="pass-card">
+        <span class="kicker">MONTHLY</span>
+        <h3>Unlimited</h3>
+        <p>Recurring PayFast subscription. Each paid month is issued as a 100-credit / 1-month Booklink package.</p>
+        <span class="membership-price">R600 <small>/ month</small></span>
+      </article>
+    </div>
+
+    <div id="packageHelp" class="package-help" hidden>
+      <strong>Already bought classes?</strong>
+      <p>Use the personal Booklink redemption link you received by email or WhatsApp. That link identifies your package and remaining credits—no separate customer login is needed.</p>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="section-top dark-text">
+      <div><p class="eyebrow">HOW IT WORKS</p><h2>One class count. No surprises.</h2></div>
+    </div>
+    <div class="steps">
+      <article><span>01</span><h3>See availability</h3><p>The homepage shows whether a class is available, filling up, full or already closed online.</p></article>
+      <article><span>02</span><h3>Reserve your bike</h3><p>Booklink controls the real 20-bike capacity and every rider ends up on the same class roster.</p></article>
+      <article><span>03</span><h3>Pay securely</h3><p>Normal bookings and packs go through PayFast inside Booklink.</p></article>
+      <article><span>04</span><h3>Walk-ins count too</h3><p>Reception pushes walk-ins into Booklink before they take a bike, keeping capacity and attendance accurate.</p></article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div><strong>SPINNING KARTEL</strong><p>Final graphic identity to be added.</p></div>
+  <a href="login.html">Staff login</a>
+</footer>
+
+<script src="config.js"></script>
+<script src="public.js"></script>
 </body>
 </html>
