@@ -2,6 +2,8 @@
 window.SPINNING_CONFIG = {
   studioName: "Spinning Kartel",
   capacity: 20,
+  dropInPrice: 70,
+  firstWeekTimes: ["06:00","09:00","18:00"],
   urgencyThreshold: 0.70,
   onlineCutoffMinutes: 20,
   monthlyUnlimitedPrice: 600,

@@ -1,11 +1,12 @@
 
 const cfg = window.SPINNING_CONFIG || {};
 const DEMO_CLASSES = [
-  {id:"c2",date:"2026-09-29",day:"TUE",time:"17:30",name:"Kartel Ride",instructor:"Tammy",rate:90,capacity:20,booked:14},
-  {id:"c3",date:"2026-09-29",day:"TUE",time:"19:00",name:"Evening Ride",instructor:"Instructor",rate:90,capacity:20,booked:18},
-  {id:"c4",date:"2026-09-30",day:"WED",time:"06:00",name:"Morning Ride",instructor:"Tammy",rate:90,capacity:20,booked:8},
-  {id:"c5",date:"2026-09-30",day:"WED",time:"17:30",name:"Kartel Ride",instructor:"Tammy",rate:90,capacity:20,booked:20},
-  {id:"c6",date:"2026-10-01",day:"THU",time:"06:00",name:"Morning Ride",instructor:"Instructor",rate:90,capacity:20,booked:4}
+  {id:"c1",date:"2026-09-30",day:"WED",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:8},
+  {id:"c2",date:"2026-09-30",day:"WED",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:5},
+  {id:"c3",date:"2026-09-30",day:"WED",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:14},
+  {id:"c4",date:"2026-10-01",day:"THU",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:4},
+  {id:"c5",date:"2026-10-01",day:"THU",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:6},
+  {id:"c6",date:"2026-10-01",day:"THU",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:12}
 ];
 
 function getSettings(){

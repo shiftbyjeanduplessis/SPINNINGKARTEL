@@ -3,9 +3,12 @@ if(sessionStorage.getItem("sk_staff_auth")!=="1") location.replace("login.html")
 const cfg=window.SPINNING_CONFIG||{};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const DEFAULT_CLASSES=[
-{id:"c2",date:"2026-09-29",day:"TUE",time:"17:30",name:"Kartel Ride",instructor:"Tammy",rate:90,capacity:20,booked:14},
-{id:"c3",date:"2026-09-29",day:"TUE",time:"19:00",name:"Evening Ride",instructor:"Student Instructor",rate:90,capacity:20,booked:18},
-{id:"c4",date:"2026-09-30",day:"WED",time:"06:00",name:"Morning Ride",instructor:"Tammy",rate:90,capacity:20,booked:8}
+{id:"c1",date:"2026-09-30",day:"WED",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:8},
+{id:"c2",date:"2026-09-30",day:"WED",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:5},
+{id:"c3",date:"2026-09-30",day:"WED",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:14},
+{id:"c4",date:"2026-10-01",day:"THU",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:4},
+{id:"c5",date:"2026-10-01",day:"THU",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:6},
+{id:"c6",date:"2026-10-01",day:"THU",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:12}
 ];
 let settings=JSON.parse(localStorage.getItem("sk_settings")||"null")||{
  capacity:cfg.capacity||20,urgencyThreshold:cfg.urgencyThreshold||.70,onlineCutoffMinutes:cfg.onlineCutoffMinutes||20,
