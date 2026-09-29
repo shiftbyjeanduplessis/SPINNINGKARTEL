@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#050609">
   <title>Spinning Kartel | Indoor Cycling</title>
-  <meta name="description" content="Spinning Kartel indoor cycling. Ride at 06:00, 09:00 or 18:00 in opening week. R70 per class.">
+  <meta name="description" content="Spinning Kartel indoor cycling. Opening-week classes at 06:00, 09:00 and 18:00. R70 per ride, packages, monthly membership and anytime rentals.">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -16,9 +16,9 @@
   </a>
   <nav aria-label="Primary navigation">
     <a href="#rides">Classes</a>
-    <a href="#passes">Passes</a>
+    <a href="#ways">Ways to ride</a>
     <a href="#studio">The studio</a>
-    <a href="#how">How it works</a>
+    <a href="#instructors">Instructors</a>
   </nav>
   <a class="pill primary" href="#rides">BOOK A BIKE</a>
 </header>
@@ -27,26 +27,21 @@
   <section class="hero">
     <div class="hero-bg" aria-hidden="true"></div>
     <div class="hero-overlay" aria-hidden="true"></div>
-    <div class="hero-glow hero-glow-a" aria-hidden="true"></div>
-    <div class="hero-glow hero-glow-b" aria-hidden="true"></div>
-
     <div class="hero-content">
-      <img class="hero-logo" src="logo.webp" alt="Spinning Kartel logo">
       <p class="eyebrow blue">INDOOR CYCLING STUDIO</p>
       <h1>RIDE UNDER<br>THE BLUE LIGHTS.</h1>
-      <p class="hero-lead">Big energy. Serious training. A 20-bike indoor cycling studio with club atmosphere and a proper workout at the centre of it.</p>
-      <div class="hero-facts" aria-label="Opening week information">
+      <p class="hero-lead">Nightclub energy. Proper training. Ride with the class, train on a package, go monthly, or rent a bike for your own cycling session.</p>
+      <div class="hero-facts">
         <span>06:00</span><i></i><span>09:00</span><i></i><span>18:00</span><i></i><strong>R70 / RIDE</strong>
       </div>
       <div class="hero-actions">
         <a class="pill primary large" href="#rides">BOOK YOUR BIKE</a>
-        <a class="pill outline large" href="#rides">VIEW THIS WEEK</a>
+        <a class="pill outline large" href="#ways">WAYS TO RIDE</a>
       </div>
-      <div class="hero-tags"><span>20 BIKES</span><span>LOUD MUSIC</span><span>BLUE LIGHTS</span><span>REAL TRAINING</span></div>
     </div>
   </section>
 
-  <section class="opening-strip" aria-label="Opening week schedule">
+  <section class="opening-strip">
     <span class="opening-label">OPENING WEEK</span>
     <span>3 RIDES A DAY</span>
     <span>06:00</span>
@@ -58,111 +53,98 @@
   <section class="rides" id="rides">
     <div class="section-top">
       <div>
-        <p class="eyebrow blue">NEXT RIDES</p>
-        <h2>Book your bike.</h2>
+        <p class="eyebrow blue">UPCOMING CLASSES</p>
+        <h2>Pick your next ride.</h2>
       </div>
-      <p>See availability before you start. Online bookings close <strong>20 minutes before class</strong>; after that, walk-ins are subject to bike availability.</p>
+      <p>Availability is shown without publishing booking numbers. When a class starts filling, it switches to a stronger <strong>ALMOST FULL</strong> alert.</p>
     </div>
 
-    <div class="next-rides-panel">
-      <div id="homeSchedule" class="home-schedule"></div>
-      <p class="live-caption"><i></i><span id="availabilitySource">Demo availability — Booklink becomes the live source at launch.</span></p>
-    </div>
+    <div id="homeSchedule" class="home-schedule"></div>
 
-    <div class="section-subhead">
-      <div><p class="eyebrow">FULL SCHEDULE</p><h3>Upcoming classes</h3></div>
-      <span>First week · 06:00 · 09:00 · 18:00</span>
-    </div>
-    <div id="scheduleGrid" class="schedule-grid"></div>
-
-    <div class="booklink-frame">
+    <div class="schedule-more">
       <div>
-        <p class="eyebrow blue">LIVE BOOKING</p>
-        <h3>Booklink keeps the bike count honest.</h3>
-        <p>Booklink is the booking authority for class capacity, rosters and normal payments. The official booking flow will sit here once the live account is connected.</p>
+        <p class="eyebrow">FIRST WEEK SCHEDULE</p>
+        <h3>06:00 · 09:00 · 18:00</h3>
       </div>
-      <a id="booklinkOpen" class="pill primary" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKING</a>
+      <a class="text-link" href="#fullSchedule">VIEW ALL CLASSES →</a>
+    </div>
+    <div id="fullSchedule">
+      <div id="scheduleGrid" class="schedule-grid"></div>
     </div>
   </section>
 
-  <section class="passes" id="passes">
-    <div class="section-top light-copy">
-      <div>
-        <p class="eyebrow blue">WAYS TO RIDE</p>
-        <h2>Pick your way in.</h2>
-      </div>
-      <p>Keep it simple: book once, buy upfront rides, or go monthly.</p>
+  <section class="ways" id="ways">
+    <div class="ways-heading">
+      <p class="eyebrow blue">WAYS TO RIDE</p>
+      <h2>Same studio.<br>Four ways to get on a bike.</h2>
+      <p>Classes when you want the energy. Solo rentals when you want your own training time.</p>
     </div>
 
-    <div class="pass-grid">
-      <article class="pass-card">
-        <span class="kicker">SINGLE RIDE</span>
-        <h3>R70</h3>
-        <p>Book any available class and pay through Booklink → PayFast.</p>
-        <a href="#rides">BOOK A RIDE →</a>
+    <div class="way-list">
+      <article>
+        <span class="way-no">01</span>
+        <div><p class="kicker">ONCE-OFF RIDES</p><h3>R70 per class</h3><p>Choose any available class and book a single ride.</p><a href="#rides">BOOK A RIDE →</a></div>
       </article>
-
-      <article class="pass-card">
-        <span class="kicker">CLASS PACKS</span>
-        <h3>Ride more.<br>Pay upfront.</h3>
-        <p>Buy a prepaid Booklink package and use your personal package link whenever you want to reserve a bike.</p>
-        <button class="link-button" id="packageHelpBtn">I ALREADY HAVE A PACK →</button>
+      <article>
+        <span class="way-no">02</span>
+        <div><p class="kicker">RIDE PACKAGES</p><h3>Ride more. Pay upfront.</h3><p>Prepaid rides with your personal Booklink package link.</p><button class="link-button" id="packageHelpBtn">I HAVE A PACKAGE →</button></div>
       </article>
-
-      <article class="pass-card featured">
-        <span class="kicker">MONTHLY UNLIMITED</span>
-        <h3>R600 <small>/ month</small></h3>
-        <p>Recurring PayFast subscription with a monthly Booklink package for class bookings, subject to bike availability.</p>
-        <span class="featured-line">UNLIMITED STUDIO ACCESS</span>
+      <article>
+        <span class="way-no">03</span>
+        <div><p class="kicker">MONTHLY MEMBERSHIP</p><h3>R600 / month</h3><p>Unlimited studio access and class bookings, subject to bike availability.</p><span class="way-note">MONTHLY UNLIMITED</span></div>
+      </article>
+      <article>
+        <span class="way-no">04</span>
+        <div><p class="kicker">ANYTIME RENTALS</p><h3>For individual cyclists</h3><p>Rent a studio bike outside class times for your own training session—no class required.</p><span class="way-note">SOLO TRAINING</span></div>
       </article>
     </div>
 
     <div id="packageHelp" class="package-help" hidden>
       <strong>Already bought classes?</strong>
-      <p>Use the personal Booklink redemption link you received by email or WhatsApp. That link identifies your package and remaining credits—no separate customer login is needed.</p>
+      <p>Use the personal Booklink redemption link sent to you by email or WhatsApp. No separate customer login is needed.</p>
     </div>
   </section>
 
   <section class="studio" id="studio">
     <div class="studio-copy">
       <p class="eyebrow blue">THE STUDIO</p>
-      <h2>THIS IS<br>SPINNING KARTEL.</h2>
-      <p class="studio-lead">Black walls. Blue roof lights. Loud music. Twenty bikes.</p>
-      <p>A focused indoor cycling space with the atmosphere of a club and the structure of a proper training session. High energy without losing the discipline.</p>
-      <div class="studio-stats"><span><strong>20</strong> bikes</span><span><strong>3</strong> opening-week ride times</span><span><strong>R70</strong> per class</span></div>
+      <h2>BLACK WALLS.<br>BLUE LIGHTS.<br>BIG ENERGY.</h2>
+      <p class="studio-lead">A 20-bike indoor cycling studio built to feel more like a club than a gym.</p>
+      <p>Come for a coached ride, use a package, go monthly, or rent a bike for your own cycling session. The atmosphere is high-energy; the training is still the point.</p>
     </div>
-    <div class="studio-grid" aria-label="Spinning Kartel studio imagery">
-      <figure class="photo photo-main"><img src="storefront.webp" alt="Spinning Kartel storefront"></figure>
-      <figure class="photo"><img src="studio.webp" alt="Spinning Kartel studio"></figure>
-      <figure class="photo"><img src="bikes.webp" alt="Indoor cycling bikes"></figure>
-      <figure class="photo"><img src="class.webp" alt="Indoor cycling class atmosphere"></figure>
+    <div class="studio-photos">
+      <figure><img src="storefront.webp" alt="Spinning Kartel storefront"></figure>
+      <figure><img src="studio.webp" alt="Spinning Kartel studio"></figure>
     </div>
   </section>
 
-  <section class="attitude">
-    <div class="attitude-line"></div>
-    <p class="eyebrow blue">SPINNING KARTEL</p>
-    <h2>WE DON'T FOLLOW<br>THE CULTURE.<br><span>WE BUILD IT.</span></h2>
-    <div class="attitude-tags"><span>ENERGY</span><span>COMMUNITY</span><span>DISCIPLINE</span><span>HUSTLE</span></div>
+  <section class="instructors" id="instructors">
+    <div class="section-top">
+      <div><p class="eyebrow blue">MEET THE INSTRUCTORS</p><h2>Different styles.<br>Same energy.</h2></div>
+      <p>Four instructors are planned for launch. Profiles below are placeholders until final names, photos and class descriptions are supplied.</p>
+    </div>
+    <div class="instructor-list">
+      <article><div class="instructor-placeholder">01</div><div><h3>INSTRUCTOR 1</h3><strong>HIGH-ENERGY RIDES</strong><p>Big music, strong intervals and a serious sweat. All levels welcome.</p></div></article>
+      <article><div class="instructor-placeholder">02</div><div><h3>INSTRUCTOR 2</h3><strong>ENDURANCE & POWER</strong><p>Steady climbs, strong beats and a focus on consistent progress.</p></div></article>
+      <article><div class="instructor-placeholder">03</div><div><h3>INSTRUCTOR 3</h3><strong>BEGINNER FRIENDLY</strong><p>Supportive, accessible and still a proper workout.</p></div></article>
+      <article><div class="instructor-placeholder">04</div><div><h3>INSTRUCTOR 4</h3><strong>EVENING ENERGY</strong><p>Music-led sessions with a big atmosphere to finish the day.</p></div></article>
+    </div>
   </section>
 
   <section class="how" id="how">
-    <div class="section-top light-copy">
-      <div><p class="eyebrow blue">HOW IT WORKS</p><h2>One class count.<br>No surprises.</h2></div>
-      <p>Everything points back to the same Booklink roster, including walk-ins.</p>
-    </div>
+    <div class="how-heading"><p class="eyebrow blue">HOW IT WORKS</p><h2>Choose. Book. Ride.</h2></div>
     <div class="steps">
-      <article><span>01</span><h3>CHOOSE YOUR RIDE</h3><p>See times and availability before you begin.</p></article>
-      <article><span>02</span><h3>BOOK YOUR BIKE</h3><p>Booklink reserves one of the 20 bikes.</p></article>
-      <article><span>03</span><h3>PAY</h3><p>Normal bookings and packs go through PayFast.</p></article>
-      <article><span>04</span><h3>SHOW UP & RIDE</h3><p>Walk-ins are added to the same roster before they take a bike.</p></article>
+      <article><span>01</span><h3>CHOOSE A TIME</h3><p>See whether the class is open, almost full or full.</p></article>
+      <article><span>02</span><h3>BOOK YOUR BIKE</h3><p>Reserve through the studio booking flow.</p></article>
+      <article><span>03</span><h3>PAY</h3><p>Once-off rides and packages are paid securely online.</p></article>
+      <article><span>04</span><h3>SHOW UP & RIDE</h3><p>Walk-ins are welcome when there is still a bike available.</p></article>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="footer-brand"><img src="logo.webp" alt="Spinning Kartel"><div><strong>SPINNING KARTEL</strong><p>Indoor cycling · blue lights · big energy.</p></div></div>
-  <div class="footer-links"><a href="#rides">Book a ride</a><a href="#passes">Passes</a><a href="login.html">Staff login</a></div>
+  <div class="footer-links"><a href="#rides">Classes</a><a href="#ways">Ways to ride</a><a href="#instructors">Instructors</a><a href="login.html">Staff login</a></div>
 </footer>
 
 <script src="config.js"></script>
