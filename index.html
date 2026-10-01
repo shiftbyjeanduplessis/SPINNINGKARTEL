@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#050609">
+  <meta name="theme-color" content="#06070a">
   <title>Spinning Kartel | Indoor Cycling</title>
-  <meta name="description" content="Spinning Kartel indoor cycling in Mossel Bay. Weekday classes at 05:30, 08:00, 18:00 and 19:00, Saturday at 07:00 and 08:00. R70 per 45-minute ride.">
+  <meta name="description" content="Spinning Kartel indoor cycling in Mossel Bay. R70 once-off rides and R600 Monthly Unlimited. Weekday and Saturday classes.">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -15,189 +15,172 @@
     <img src="logo.webp" alt="Spinning Kartel">
     <span><strong>SPINNING KARTEL</strong><small>INDOOR CYCLING STUDIO</small></span>
   </a>
+
   <nav aria-label="Primary navigation">
-    <a href="#classes">Classes</a>
-    <a href="#ways">Ways to ride</a>
+    <a href="#schedule">Classes</a>
+    <a href="#pricing">Pricing</a>
     <a href="#studio">The studio</a>
-    <a href="#instructors">Instructors</a>
     <a href="#faq">FAQ</a>
   </nav>
-  <a class="cta top-cta" href="#classes">BOOK A BIKE <b>›</b></a>
+
+  <a class="button primary" href="https://bklnk.co.za/spinningkartel">BOOK A BIKE</a>
 </header>
 
 <main id="top">
   <section class="hero">
-    <div class="hero-glow glow-a"></div>
-    <div class="hero-glow glow-b"></div>
-
     <div class="hero-copy">
-      <p class="eyebrow">INDOOR CYCLING STUDIO</p>
+      <p class="eyebrow">INDOOR CYCLING · MOSSEL BAY</p>
       <h1>TURN UP.<br>RIDE <em>HARD.</em></h1>
-      <p class="hero-lead">Music up. Lights on. Energy high. Come for the ride, the motivation and the feeling of doing more than you thought you could.</p>
+      <p class="hero-lead">Big sound. Colourful lights. Proper coaching. A room full of energy that keeps you moving when your legs want to stop.</p>
 
-      <div class="hero-facts">
-        <span>05:30</span><i></i><span>08:00</span><i></i><span>18:00</span><i></i><span>19:00</span><i></i><strong>R70 / 45 MIN</strong>
+      <div class="hero-meta">
+        <span>45 MIN</span>
+        <span>12 BIKES</span>
+        <span>R70 SINGLE RIDE</span>
       </div>
 
       <div class="hero-actions">
-        <a class="cta" href="#classes">BOOK YOUR BIKE <b>›</b></a>
-        <a class="ghost-cta" href="#classes">VIEW CLASS TIMES</a>
+        <a class="button primary large" href="https://bklnk.co.za/spinningkartel">BOOK YOUR BIKE</a>
+        <a class="button outline large" href="#schedule">VIEW CLASS TIMES</a>
       </div>
     </div>
 
-    <div class="hero-visual" aria-label="High-energy indoor cycling class">
-      <div class="hero-photo hero-main"></div>
-      <div class="hero-photo hero-man"></div>
-      <div class="light-sign sign-left">KEEP<br>GOING</div>
-      <div class="light-sign sign-right">ONE MORE<br>PUSH</div>
-      <div class="energy-line line-one"></div>
-      <div class="energy-line line-two"></div>
-    </div>
+    <div class="hero-image" role="img" aria-label="Indoor cycling class"></div>
   </section>
 
-  <section class="class-rail" id="classes">
-    <div class="rail-label">
-      <span>UPCOMING</span>
-      <strong>CLASSES</strong>
-      <a href="https://bklnk.co.za/spinningkartel" aria-label="Open full class schedule">›</a>
+  <section class="schedule-section" id="schedule">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">CLASS SCHEDULE</p>
+        <h2>FIND YOUR RIDE.</h2>
+      </div>
+      <p>Weekdays at <strong>05:30, 08:00, 18:00 and 19:00</strong>. Saturday at <strong>07:00 and 08:00</strong>.</p>
     </div>
-    <div id="homeSchedule" class="rail-classes">
-      <article class="rail-card loading-card"><span>LOADING</span><strong>Upcoming rides…</strong></article>
+
+    <div id="quickSchedule" class="quick-schedule">
+      <div class="schedule-loading">Loading upcoming classes…</div>
     </div>
-    <a class="rail-full" href="https://bklnk.co.za/spinningkartel">
-      <span class="calendar-icon">▦</span>
-      <span><small>VIEW FULL</small><strong>SCHEDULE</strong></span>
-      <b>›</b>
-    </a>
+
+    <div class="schedule-actions">
+      <button id="toggleFullSchedule" class="button outline" type="button">VIEW FULL SCHEDULE</button>
+    </div>
+
+    <div id="fullSchedule" class="full-schedule" hidden></div>
   </section>
 
-  <section class="ways" id="ways">
-    <div class="ways-intro">
+  <section class="pricing" id="pricing">
+    <div class="pricing-intro">
       <p class="eyebrow">WAYS TO RIDE</p>
-      <h2>FIND YOUR<br>RIDE.</h2>
-      <p>Flexible options for every schedule and energy goal.</p>
-      <a class="ghost-cta small" href="#classes">SEE CLASS TIMES <b>›</b></a>
+      <h2>KEEP IT SIMPLE.</h2>
+      <p>Two options. No complicated tiers.</p>
     </div>
 
-    <div class="ride-cards">
-      <article class="ride-card blue-card">
-        <span class="ride-icon">ϟ</span>
-        <p class="card-kicker">ONCE-OFF RIDE</p>
-        <h3>R70</h3>
-        <p>One class. All the energy. Book any available 45-minute ride.</p>
-        <a href="#classes">›</a>
+    <div class="pricing-grid">
+      <article class="price-card single">
+        <p class="price-label">SINGLE RIDE</p>
+        <div class="price">R70</div>
+        <p>One 45-minute class. Choose any available session and book your bike.</p>
+        <a class="text-link" href="https://bklnk.co.za/spinningkartel">BOOK A SINGLE RIDE →</a>
       </article>
 
-      <article class="ride-card pink-card">
-        <span class="ride-icon">▰</span>
-        <p class="card-kicker">RIDE PACKAGES</p>
-        <h3>RIDE MORE</h3>
-        <p>Prepaid rides managed through your personal Booklink package link.</p>
-        <button id="packageHelpBtn" type="button">›</button>
+      <article class="price-card monthly">
+        <p class="price-label">MONTHLY UNLIMITED</p>
+        <div class="price">R600 <small>/ month</small></div>
+        <p>Unlimited class bookings for the month, subject to bike availability.</p>
+        <span class="member-note">MONTHLY MEMBERSHIP · MANAGED BY THE STUDIO</span>
       </article>
-
-      <article class="ride-card purple-card">
-        <span class="ride-icon">♕</span>
-        <p class="card-kicker">MONTHLY MEMBERSHIP</p>
-        <h3>R600</h3>
-        <p>Monthly Unlimited. Book classes subject to bike availability.</p>
-        <span class="ride-arrow">›</span>
-      </article>
-
-      <article class="ride-card orange-card">
-        <span class="ride-icon">⌁</span>
-        <p class="card-kicker">ANYTIME RENTALS</p>
-        <h3>FRONT DESK</h3>
-        <p>Individual bike sessions outside class times. Ask at the studio.</p>
-        <span class="ride-arrow">›</span>
-      </article>
-    </div>
-
-    <div id="packageHelp" class="package-help" hidden>
-      <strong>Already have a package?</strong>
-      <span>Use the personal Booklink redemption link sent to you by email or WhatsApp.</span>
     </div>
   </section>
 
   <section class="studio" id="studio">
-    <div class="studio-collage">
-      <figure class="studio-big"><img src="studio.webp" alt="Spinning Kartel indoor cycling studio"></figure>
-      <figure class="studio-small top"><img src="storefront.webp" alt="Spinning Kartel storefront"></figure>
-      <div class="studio-small sign-wall">
-        <span>GOOD<br>ENERGY<br>LIVES<br>HERE</span>
-      </div>
-      <div class="studio-lightbox box-one">KEEP GOING</div>
-      <div class="studio-lightbox box-two">YOU'VE GOT THIS</div>
-    </div>
-
     <div class="studio-copy">
       <p class="eyebrow">THE STUDIO</p>
       <h2>MORE THAN<br>A WORKOUT.</h2>
-      <p class="studio-lead">A high-energy indoor cycling studio with big sound, colourful light and a community that shows up, lifts up and rides together.</p>
-      <p>Black walls. Moving colour. Loud music. Real coaching. The atmosphere pulls the whole room forward.</p>
-      <a class="ghost-cta" href="#classes">BOOK A RIDE <b>›</b></a>
+      <p class="studio-lead">Dark room. Colour everywhere. Music up. Instructor on. Everybody riding together.</p>
+      <p>The studio is built around energy and motivation — not intimidation. You control the resistance, but the room helps you keep going.</p>
+      <a class="button outline" href="#schedule">SEE CLASS TIMES</a>
     </div>
-  </section>
 
-  <section class="instructors" id="instructors">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">OUR INSTRUCTORS</p>
-        <h2>RIDE WITH PURPOSE.</h2>
+    <div class="studio-gallery">
+      <figure class="wide"><img src="studio.webp" alt="Spinning Kartel indoor cycling studio"></figure>
+      <figure><img src="storefront.webp" alt="Spinning Kartel storefront"></figure>
+      <div class="quote-panel">
+        <span>KEEP</span>
+        <strong>GOING.</strong>
+        <p>That is the whole idea.</p>
       </div>
-      <p>Passionate riders. High-energy classes. Real motivation. Instructor profiles will be added as the launch team is finalised.</p>
-    </div>
-
-    <div class="instructor-grid">
-      <article><div class="profile-image p1"></div><span>INSTRUCTOR PROFILE</span><strong>COMING SOON</strong></article>
-      <article><div class="profile-image p2"></div><span>INSTRUCTOR PROFILE</span><strong>COMING SOON</strong></article>
-      <article><div class="profile-image p3"></div><span>INSTRUCTOR PROFILE</span><strong>COMING SOON</strong></article>
-      <article><div class="profile-image p4"></div><span>INSTRUCTOR PROFILE</span><strong>COMING SOON</strong></article>
     </div>
   </section>
 
-  <section class="how">
-    <div class="section-heading compact">
-      <div><p class="eyebrow">HOW IT WORKS</p><h2>BOOK. SHOW UP. RIDE.</h2></div>
+  <section class="experience">
+    <div class="section-head compact">
+      <div>
+        <p class="eyebrow">YOUR FIRST RIDE</p>
+        <h2>YOU DON’T HAVE TO BE “FIT ENOUGH”.</h2>
+      </div>
     </div>
-    <div class="steps">
-      <article><span>01</span><h3>CHOOSE A CLASS</h3><p>Pick the day and time that works for you.</p></article>
-      <article><span>02</span><h3>BOOK YOUR BIKE</h3><p>Book through the Spinning Kartel Booklink page.</p></article>
-      <article><span>03</span><h3>PAY OR USE YOUR PACKAGE</h3><p>Once-off riders pay online. Package riders use their private redemption link.</p></article>
-      <article><span>04</span><h3>SHOW UP & RIDE</h3><p>Bring water, arrive ready and let the room do the rest.</p></article>
+
+    <div class="experience-grid">
+      <article>
+        <span>01</span>
+        <h3>BOOK A TIME</h3>
+        <p>Pick an available class from the live schedule.</p>
+      </article>
+      <article>
+        <span>02</span>
+        <h3>ARRIVE A LITTLE EARLY</h3>
+        <p>Get the bike set up properly before the class starts.</p>
+      </article>
+      <article>
+        <span>03</span>
+        <h3>RIDE AT YOUR LEVEL</h3>
+        <p>You control your resistance while the instructor controls the energy.</p>
+      </article>
     </div>
   </section>
 
   <section class="faq" id="faq">
-    <div>
+    <div class="faq-intro">
       <p class="eyebrow">FAQ</p>
-      <h2>FIRST RIDE?</h2>
-      <p>You do not need to be an experienced cyclist. Choose a class, arrive a little early and the instructor will help you set up the bike.</p>
+      <h2>GOOD TO KNOW.</h2>
     </div>
+
     <div class="faq-list">
-      <details><summary>How long is a class?</summary><p>45 minutes.</p></details>
-      <details><summary>How much is a once-off ride?</summary><p>R70.</p></details>
-      <details><summary>Do I need to book?</summary><p>Booking is recommended because class capacity is limited.</p></details>
-      <details><summary>Can I use a package?</summary><p>Yes. Use the personal Booklink package link sent to you after your package is loaded.</p></details>
+      <details>
+        <summary>How long is a class?</summary>
+        <p>45 minutes.</p>
+      </details>
+      <details>
+        <summary>How much is a single ride?</summary>
+        <p>R70.</p>
+      </details>
+      <details>
+        <summary>How does Monthly Unlimited work?</summary>
+        <p>R600 per month. The studio activates your monthly access and you can book available classes during that period.</p>
+      </details>
+      <details>
+        <summary>Do I have to be experienced?</summary>
+        <p>No. Arrive a little early and the instructor will help you get comfortable on the bike.</p>
+      </details>
     </div>
   </section>
 
   <section class="final-cta">
-    <p class="eyebrow">READY?</p>
-    <h2>YOUR BIKE IS WAITING.</h2>
-    <a class="cta large" href="https://bklnk.co.za/spinningkartel">BOOK YOUR RIDE <b>›</b></a>
+    <p class="eyebrow">READY TO RIDE?</p>
+    <h2>TURN UP.<br>WE’LL BRING THE ENERGY.</h2>
+    <a class="button primary large" href="https://bklnk.co.za/spinningkartel">BOOK YOUR BIKE</a>
   </section>
 </main>
 
 <footer>
   <div class="footer-brand">
     <img src="logo.webp" alt="Spinning Kartel">
-    <div><strong>SPINNING KARTEL</strong><p>Indoor cycling · colourful lights · big energy.</p></div>
+    <div><strong>SPINNING KARTEL</strong><p>Indoor cycling · Mossel Bay</p></div>
   </div>
   <div class="footer-links">
-    <a href="#classes">Classes</a>
-    <a href="#ways">Ways to ride</a>
-    <a href="#studio">The studio</a>
+    <a href="#schedule">Classes</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#studio">Studio</a>
     <a href="login.html">Staff login</a>
   </div>
 </footer>
