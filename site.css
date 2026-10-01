@@ -53,17 +53,15 @@ section{scroll-margin-top:82px}
 .eyebrow{margin:0 0 12px;color:#81ebff;font-size:9px;font-weight:950;letter-spacing:.20em;text-transform:uppercase}
 
 .hero{
-  min-height:650px;
-  display:grid;grid-template-columns:minmax(430px,.84fr) minmax(560px,1.16fr);
+  position:relative;min-height:650px;
+  display:block;
   background:#050609;border-bottom:1px solid var(--line);overflow:hidden
 }
 .hero-copy{
-  position:relative;z-index:3;padding:76px 24px 70px clamp(20px,5vw,70px);
-  align-self:center;
-  background:
-    radial-gradient(circle at 78% 15%,rgba(34,211,238,.08),transparent 24%),
-    radial-gradient(circle at 88% 82%,rgba(139,92,246,.07),transparent 28%),
-    #050609
+  position:relative;z-index:3;width:min(54%,720px);min-height:650px;
+  padding:76px 24px 70px clamp(20px,5vw,70px);
+  display:flex;flex-direction:column;justify-content:center;
+  background:transparent
 }
 .hero h1{
   margin:0 0 22px;font-size:clamp(68px,7.4vw,112px);line-height:.82;
@@ -82,20 +80,13 @@ section{scroll-margin-top:82px}
 }
 .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
 .hero-image{
-  position:relative;min-height:650px;
-  background-image:
-    linear-gradient(90deg,#050609 0%,rgba(5,6,9,.76) 8%,rgba(5,6,9,.16) 26%,rgba(5,6,9,.05) 78%,rgba(5,6,9,.20) 100%),
-    linear-gradient(0deg,rgba(5,6,9,.46),rgba(5,6,9,0) 38%),
-    url("https://images.pexels.com/videos/6388398/pexels-photo-6388398.jpeg?auto=compress&dpr=1&w=1800");
+  position:absolute;inset:0;min-height:650px;
+  background-image:url("spinning-hero-final.webp");
   background-size:cover;background-position:center;
 }
 .hero-image::after{
   content:"";position:absolute;inset:0;pointer-events:none;
-  background:
-    radial-gradient(circle at 20% 20%,rgba(34,211,238,.16),transparent 26%),
-    radial-gradient(circle at 78% 18%,rgba(236,72,153,.15),transparent 24%),
-    radial-gradient(circle at 65% 80%,rgba(139,92,246,.17),transparent 28%);
-  mix-blend-mode:screen
+  background:linear-gradient(90deg,rgba(5,6,9,.22) 0%,rgba(5,6,9,.10) 38%,rgba(5,6,9,0) 62%);
 }
 
 .schedule-section{padding:66px clamp(18px,4vw,58px);background:#080a0e;border-bottom:1px solid var(--line)}
@@ -217,15 +208,15 @@ footer{
 
 @media(max-width:1050px){
   .site-header{grid-template-columns:1fr auto}.site-header nav{display:none}
-  .hero{grid-template-columns:1fr 1fr}.hero h1{font-size:76px}
+  .hero h1{font-size:76px}.hero-copy{width:min(58%,650px)}
   .quick-schedule{grid-template-columns:1fr 1fr}.quick-card:nth-child(3){border-top:1px solid var(--line)}.quick-card:nth-child(3){border-left:0}.quick-card:nth-child(4){border-top:1px solid var(--line)}
   .schedule-day-grid{grid-template-columns:1fr 1fr}
   .pricing{grid-template-columns:1fr}
   .studio{grid-template-columns:1fr}
 }
 @media(max-width:760px){
-  .hero{grid-template-columns:1fr}.hero-copy{padding:54px 18px 36px}.hero h1{font-size:clamp(58px,16vw,86px)}.hero-lead{font-size:16px}
-  .hero-image{min-height:420px;background-position:center}
+  .hero{min-height:620px}.hero-copy{width:min(82%,620px);min-height:620px;padding:54px 18px 36px}.hero h1{font-size:clamp(58px,16vw,86px)}.hero-lead{font-size:16px}
+  .hero-image{min-height:620px;background-position:62% center}.hero-image::after{background:linear-gradient(90deg,rgba(5,6,9,.82) 0%,rgba(5,6,9,.52) 45%,rgba(5,6,9,.12) 75%,rgba(5,6,9,.08) 100%)}
   .section-head{display:block}.section-head>p{margin-top:14px}
   .pricing-grid{grid-template-columns:1fr}.price-card{min-height:270px}
   .studio-gallery{grid-template-columns:1fr;grid-template-rows:330px 180px 190px}.studio-gallery .wide{grid-row:1;grid-column:1}.studio-gallery figure:nth-child(2){grid-row:2;grid-column:1}.quote-panel{grid-row:3;grid-column:1}
@@ -235,7 +226,7 @@ footer{
 @media(max-width:560px){
   .site-header{height:64px;padding:0 12px}.brand img{width:48px;height:48px}.brand strong{font-size:12px}.brand small{font-size:7px}.site-header>.button{min-height:38px;padding:0 14px;font-size:8px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
-  .hero-image{min-height:340px}
+  .hero{min-height:590px}.hero-copy{width:100%;min-height:590px}.hero-image{min-height:590px;background-position:67% center}
   .schedule-section,.pricing,.studio,.experience,.faq{padding-left:14px;padding-right:14px}
   .quick-schedule{grid-template-columns:1fr}.quick-card+.quick-card{border-left:0;border-top:1px solid var(--line)}
   .schedule-day-grid{grid-template-columns:1fr}
