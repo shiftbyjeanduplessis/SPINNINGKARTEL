@@ -1,65 +1,96 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
-const BOOKLINK=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
+const BOOKING_URL=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
 const $=s=>document.querySelector(s);
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function futureClass(c){return new Date(c.date+"T"+c.time+":00+02:00").getTime()>Date.now()-5*60*1000}
-function dayLabel(date){
-  const d=new Date(date+"T12:00:00");
-  const today=new Date();
-  const same=d.toDateString()===today.toDateString();
-  return same?"TODAY":d.toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
+function prettyDate(date){
+  return new Date(date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
 }
-function rideName(c){
-  if(c.time==="05:30") return "Morning Ride";
-  if(c.time==="08:00") return "Power Ride";
-  if(c.time==="18:00") return "Ride & Rhythm";
-  if(c.time==="19:00") return "Endurance Ride";
-  if(c.time==="07:00") return "Weekend Kickstart";
-  return "Spinning Class";
+function rideName(time){
+  if(time==="05:30")return"Early Ride";
+  if(time==="08:00")return"Morning Ride";
+  if(time==="18:00")return"Evening Ride";
+  if(time==="19:00")return"Night Ride";
+  if(time==="07:00")return"Saturday Ride";
+  return"Spinning Class";
 }
-function statusMeta(status){
-  if(status==="full") return {label:"FULL",cls:"full"};
-  if(status==="almost_full") return {label:"ALMOST FULL",cls:"warning"};
-  return {label:"OPEN",cls:""};
+function status(c){
+  if(c.status==="full")return{label:"FULL",cls:"full"};
+  if(c.status==="almost_full")return{label:"ALMOST FULL",cls:"warning"};
+  return{label:"OPEN",cls:""};
 }
-function railCard(c){
-  const st=statusMeta(c.status);
-  return '<article class="rail-card">'+
-    '<small>'+dayLabel(c.date)+'</small>'+
+function quickCard(c){
+  const s=status(c);
+  return '<article class="quick-card">'+
+    '<span class="quick-status '+s.cls+'">'+s.label+'</span>'+
+    '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
-    '<span>'+esc(rideName(c))+'</span>'+
-    '<span class="rail-status '+st.cls+'">'+st.label+'</span>'+
-    '<a href="'+BOOKLINK+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>'+
+    '<p>'+esc(rideName(c.time))+' · 45 min · R70</p>'+
+    '<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>'+
+  '</article>';
+}
+function fullCard(c){
+  const s=status(c);
+  const statusText=s.label==="OPEN"?"BOOK":s.label;
+  return '<article class="full-class">'+
+    '<div class="time">'+esc(c.time)+'</div>'+
+    '<div class="desc"><strong>'+esc(rideName(c.time))+'</strong><span>45 min · R70</span></div>'+
+    '<div class="book">'+statusText+'</div>'+
+    (c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fallback(){
   const rows=[],start=new Date();
-  for(let i=0;i<8;i++){
+  for(let i=0;i<15;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
-    const day=d.getDay();
+    const dow=d.getDay();
     const date=d.toISOString().slice(0,10);
-    const times=day===6?(cfg.saturdayTimes||["07:00","08:00"]):(day>=1&&day<=5?(cfg.weekdayTimes||["05:30","08:00","18:00","19:00"]):[]);
+    const times=dow===6?(cfg.saturdayTimes||["07:00","08:00"]):(dow>=1&&dow<=5?(cfg.weekdayTimes||["05:30","08:00","18:00","19:00"]):[]);
     times.forEach(time=>rows.push({date,time,status:"open"}));
   }
   return rows.filter(futureClass);
 }
-async function loadSchedule(){
-  const el=$("#homeSchedule");if(!el)return;
+function renderFull(rows){
+  const el=$("#fullSchedule");if(!el)return;
+  const groups=new Map();
+  rows.forEach(c=>{
+    if(!groups.has(c.date))groups.set(c.date,[]);
+    groups.get(c.date).push(c);
+  });
+  el.innerHTML=[...groups.entries()].map(([date,items])=>
+    '<section class="schedule-day">'+
+      '<div class="schedule-day-head"><strong>'+prettyDate(date)+'</strong><span>'+items.length+' CLASS'+(items.length===1?'':'ES')+'</span></div>'+
+      '<div class="schedule-day-grid">'+items.map(fullCard).join("")+'</div>'+
+    '</section>'
+  ).join("");
+}
+async function bootSchedule(){
   let rows=[];
   try{
-    const r=await fetch(API+"/api/public/classes?days=10",{cache:"no-store"});
+    const r=await fetch(API+"/api/public/classes?days=14",{cache:"no-store"});
     if(!r.ok)throw new Error("api");
     rows=(await r.json()).classes||[];
   }catch(e){rows=fallback()}
-  rows=rows.filter(futureClass).slice(0,4);
-  el.innerHTML=rows.length?rows.map(railCard).join(""):'<article class="rail-card loading-card"><span>Open Booklink to see upcoming classes.</span></article>';
+  rows=rows.filter(futureClass);
+  const quick=$("#quickSchedule");
+  if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||'<div class="schedule-loading">No upcoming classes found.</div>';
+  renderFull(rows);
 }
-const packageHelpBtn=$("#packageHelpBtn");
-if(packageHelpBtn){
-  packageHelpBtn.addEventListener("click",()=>{
-    const el=$("#packageHelp");if(el)el.hidden=!el.hidden;
+const toggle=$("#toggleFullSchedule");
+if(toggle){
+  toggle.addEventListener("click",()=>{
+    const el=$("#fullSchedule");
+    const open=el.hasAttribute("hidden");
+    if(open){
+      el.removeAttribute("hidden");
+      toggle.textContent="HIDE FULL SCHEDULE";
+      el.scrollIntoView({behavior:"smooth",block:"start"});
+    }else{
+      el.setAttribute("hidden","");
+      toggle.textContent="VIEW FULL SCHEDULE";
+    }
   });
 }
-loadSchedule();
+bootSchedule();
