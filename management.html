@@ -10,7 +10,7 @@
 <header class="admin-topbar">
   <a class="brand invert" href="index.html"><img class="brand-logo" src="logo.webp" alt="Spinning Kartel"><span><strong>SPINNING KARTEL</strong><small>Management</small></span></a>
   <div class="top-actions">
-    <span class="sync"><i></i><span id="syncLabel">Booklink: integration pending</span></span>
+    <span class="sync"><i></i><span id="syncLabel">Connecting…</span></span>
     <a class="ghost" href="index.html">Public site</a>
     <button class="ghost" id="logoutBtn">Log out</button>
   </div>
@@ -19,12 +19,11 @@
 <div class="admin-shell">
   <aside class="sidebar">
     <button class="nav active" data-view="today">Today</button>
-    <button class="nav" data-view="classes">Classes</button>
+    <button class="nav" data-view="rota">Instructor rota</button>
+    <button class="nav" data-view="attendance">Attendance & pay</button>
     <button class="nav" data-view="memberships">Memberships</button>
     <button class="nav" data-view="instructors">Instructors</button>
-    <button class="nav" data-view="customers">Customers</button>
-    <button class="nav" data-view="money">Money</button>
-    <button class="nav" data-view="settings">Settings</button>
+    <button class="nav" data-view="integration">Booklink sync</button>
     <div class="side-spacer"></div>
     <a class="booklink-link" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">Open Booklink ↗</a>
   </aside>
@@ -32,106 +31,98 @@
   <main class="admin-main">
     <section class="view active" data-page="today">
       <div class="page-head">
-        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Run the floor, add walk-ins and keep the bike count accurate.</p></div>
-        <div class="head-actions"><button class="button secondary" data-open="classDialog">+ Class</button><button class="button" data-open="walkinDialog">+ Walk-in</button></div>
+        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. This screen shows the rota, live booked count and attendance work still to close.</p></div>
+        <a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK</a>
       </div>
       <div class="metrics">
-        <article><span>Bookings</span><strong id="metricBookings">0</strong></article>
-        <article><span>Walk-ins</span><strong id="metricWalkins">0</strong></article>
-        <article><span>Classes</span><strong id="metricClasses">0</strong></article>
-        <article><span>Next class bikes</span><strong id="metricAvailable">0</strong></article>
+        <article><span>Classes today</span><strong id="metricClasses">0</strong></article>
+        <article><span>Booked seats</span><strong id="metricBookings">0</strong></article>
+        <article><span>Instructor TBC</span><strong id="metricUnassigned">0</strong></article>
+        <article><span>Membership actions</span><strong id="metricMembershipActions">0</strong></article>
       </div>
-      <section class="panel"><div class="panel-head"><div><p class="eyebrow">LIVE FLOOR</p><h2>Today's classes</h2></div><p>Every rider—including walk-ins—must end up in Booklink.</p></div><div id="todayClasses" class="class-list"></div></section>
-      <section class="panel compact"><div class="panel-head"><div><p class="eyebrow">RECENT</p><h2>Walk-ins</h2></div></div><div id="walkinList"></div></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">TODAY</p><h2>Class floor</h2></div><p>Booked seats sync from Booklink once the webhook is connected.</p></div>
+        <div id="todayClasses" class="ops-list"></div>
+      </section>
     </section>
 
-    <section class="view" data-page="classes">
-      <div class="page-head"><div><p class="eyebrow">SCHEDULE</p><h1>Classes</h1><p class="muted">Rates, capacity, online cutoff and Booklink booking status.</p></div><button class="button" data-open="classDialog">+ Add class</button></div>
-      <section class="panel"><div id="allClasses" class="class-list"></div></section>
+    <section class="view" data-page="rota">
+      <div class="page-head">
+        <div><p class="eyebrow">NEXT 14 DAYS</p><h1>Instructor rota</h1><p class="muted">Assign the instructor once here. The same name appears on the public website and is used for attendance and pay.</p></div>
+        <button class="button" id="saveRota">SAVE ROTA</button>
+      </div>
+      <section class="panel">
+        <div class="tracker-strip"><strong>12 bikes</strong><span>Weekdays 05:30 · 08:00 · 18:00 · 19:00</span><span>Saturday 07:00 · 08:00</span></div>
+        <div id="rotaList" class="rota-list"></div>
+      </section>
+    </section>
+
+    <section class="view" data-page="attendance">
+      <div class="page-head">
+        <div><p class="eyebrow">ACTUAL ATTENDANCE</p><h1>Attendance & pay</h1><p class="muted">Close each class with the number who actually rode. Pay uses actual attendance, not bookings.</p></div>
+      </div>
+      <div class="pay-rule"><span>R200 base / class</span><span>+ R10 per attendee above 5</span><span>Actual attendance only</span></div>
+      <div id="paySummary" class="instructor-summary"></div>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">LAST 7 DAYS</p><h2>Close classes</h2></div><p>Enter actual riders after the class. No-shows are calculated from the Booklink booked count.</p></div>
+        <div id="attendanceList" class="attendance-list"></div>
+      </section>
     </section>
 
     <section class="view" data-page="memberships">
-      <div class="page-head"><div><p class="eyebrow">MONTHLY UNLIMITED</p><h1>Memberships</h1><p class="muted">PayFast collects monthly. Staff verify payment and issue the Booklink 100-credit package.</p></div><button class="button" data-open="memberDialog">+ Add member</button></div>
+      <div class="page-head">
+        <div><p class="eyebrow">MONTHLY UNLIMITED</p><h1>Memberships</h1><p class="muted">Track the external recurring payment and whether the client's hidden Booklink package has been issued or must be cancelled.</p></div>
+        <button class="button" data-open="memberDialog">+ ADD MEMBER</button>
+      </div>
       <section class="panel">
-        <div class="tracker-strip"><strong id="memberMonth"></strong><span>1. PayFast paid</span><span>2. Booklink package issued</span></div>
+        <div class="tracker-strip"><strong>R600 / month</strong><span>Paid → issue Booklink package</span><span>Failed/cancelled → do not renew or cancel package</span></div>
         <div id="membershipList" class="member-list"></div>
       </section>
     </section>
 
     <section class="view" data-page="instructors">
-      <div class="page-head"><div><p class="eyebrow">PAY & ATTENDANCE</p><h1>Instructors</h1><p class="muted">Base fee + R10 per actual attendee above five.</p></div><button class="button" data-open="instructorDialog">+ Add instructor</button></div>
-      <div id="instructorSummary" class="instructor-summary"></div>
-      <section class="panel">
-        <div class="pay-rule"><span>Default base: R200</span><span>Commission: R10 / rider above 5</span><span>Uses actual attendance, not bookings</span></div>
-        <div class="table-wrap"><table><thead><tr><th>Class</th><th>Instructor</th><th>Booked</th><th>Attended</th><th>Base</th><th>Comm. riders</th><th>Commission</th><th>Total</th></tr></thead><tbody id="payRows"></tbody></table></div>
-      </section>
-    </section>
-
-    <section class="view" data-page="customers">
-      <div class="page-head"><div><p class="eyebrow">CONTACTS</p><h1>Customers</h1><p class="muted">Production client data comes from Booklink; export opted-in contacts for marketing.</p></div><a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK CLIENTS</a></div>
-      <section class="panel"><div id="customerList" class="customer-list"></div></section>
-    </section>
-
-    <section class="view" data-page="money">
-      <div class="page-head"><div><p class="eyebrow">PAYMENTS</p><h1>Money</h1><p class="muted">Booklink → PayFast for normal payments. PayFast subscriptions are checked here for Monthly Unlimited.</p></div></div>
-      <div class="money-grid">
-        <article class="money-card"><span>NORMAL BOOKINGS & PACKS</span><h2>Booklink → PayFast</h2><p>Drop-ins, paid bookings and prepaid packages are paid through Booklink.</p></article>
-        <article class="money-card"><span>MONTHLY UNLIMITED</span><h2>PayFast subscription</h2><p>Verify successful monthly payment, then issue/renew the Booklink 100-credit package.</p></article>
-        <article class="money-card"><span>RECEPTION</span><h2>Card / EFT / comp</h2><p>Reception payments are recorded against the rider and the rider is still pushed through Booklink.</p></article>
+      <div class="page-head">
+        <div><p class="eyebrow">TEAM</p><h1>Instructors</h1><p class="muted">Main, student and guest instructors can have different pay rates.</p></div>
+        <button class="button" data-open="instructorDialog">+ ADD INSTRUCTOR</button>
       </div>
+      <div id="instructorList" class="instructor-summary"></div>
     </section>
 
-    <section class="view" data-page="settings">
-      <div class="page-head"><div><p class="eyebrow">BUSINESS RULES</p><h1>Settings</h1><p class="muted">These defaults control the public-site urgency and operational calculations.</p></div></div>
-      <section class="panel settings-form">
-        <label>Default bikes per class<input id="setCapacity" type="number" min="1"></label>
-        <label>Urgency starts at (%)<input id="setUrgency" type="number" min="1" max="100"></label>
-        <label>Online booking cutoff (minutes before class)<input id="setCutoff" type="number" min="0"></label>
-        <label>Monthly Unlimited price (R)<input id="setMembershipPrice" type="number" min="0"></label>
-        <label>Monthly Unlimited Booklink credits<input id="setMembershipCredits" type="number" min="1"></label>
-        <label>Default instructor base (R)<input id="setBasePay" type="number" min="0"></label>
-        <label>Commission per rider above 5 (R)<input id="setCommission" type="number" min="0"></label>
-        <button class="button" id="saveSettings">SAVE SETTINGS</button>
+    <section class="view" data-page="integration">
+      <div class="page-head">
+        <div><p class="eyebrow">BOOKLINK</p><h1>Booking sync</h1><p class="muted">Booklink remains the booking authority. Confirmed, cancelled and rescheduled bookings feed this dashboard through a signed webhook.</p></div>
+      </div>
+      <section class="panel">
+        <div class="integration-note">
+          <strong>Webhook endpoint</strong>
+          <code id="webhookUrl">Loading…</code>
+          <span id="webhookStatus">Checking configuration…</span>
+          <span>In Booklink subscribe to: <strong>booking.confirmed</strong>, <strong>booking.cancelled</strong> and <strong>booking.rescheduled</strong>.</span>
+          <a class="button secondary" href="https://app.booklink.co.za/settings/webhooks" target="_blank" rel="noreferrer">OPEN BOOKLINK WEBHOOKS</a>
+        </div>
       </section>
-      <section class="panel"><div class="integration-note"><strong>Live integrations still to wire:</strong><span>Booklink inline embed / class data</span><span>Booklink walk-in/manual booking creation</span><span>PayFast merchant/subscription credentials</span><span>Production staff auth</span></div></section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">DELIVERY LOG</p><h2>Recent events</h2></div></div>
+        <div id="webhookEvents" class="event-list"></div>
+      </section>
     </section>
   </main>
 </div>
 
-<dialog id="walkinDialog"><form id="walkinForm" class="modal">
-  <div class="modal-head"><div><p class="eyebrow">FRONT DESK</p><h2>Add walk-in</h2></div><button type="button" class="close" data-close>×</button></div>
-  <div id="walkinAvailability" class="notice"></div>
-  <label>Class<select id="walkinClass" required></select></label>
-  <div class="two"><label>Name<input id="walkinName" required></label><label>Mobile<input id="walkinMobile"></label></div>
-  <label>Email<input id="walkinEmail" type="email"></label>
-  <div class="two"><label>Payment<select id="walkinPayment"><option value="card">Card at desk</option><option value="eft">EFT</option><option value="cash">Cash</option><option value="payfast">PayFast</option><option value="comp">Complimentary</option></select></label><label>Amount (R)<input id="walkinAmount" type="number" min="0"></label></div>
-  <div class="modal-note">Production: Confirm must create the rider in Booklink first. Only after Booklink accepts the seat may the walk-in show as confirmed here.</div>
-  <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">CONFIRM WALK-IN</button></div>
-</form></dialog>
-
-<dialog id="classDialog"><form id="classForm" class="modal">
-  <div class="modal-head"><div><p class="eyebrow">SCHEDULE</p><h2>Add class</h2></div><button type="button" class="close" data-close>×</button></div>
-  <div class="two"><label>Class name<input id="className" required value="Kartel Ride"></label><label>Instructor<select id="classInstructor" required></select></label></div>
-  <div class="three"><label>Date<input id="classDate" type="date" required></label><label>Time<input id="classTime" type="time" required></label><label>Rate (R)<input id="classRate" type="number" min="0" required value="90"></label></div>
-  <label>Bike capacity<input id="classCapacity" type="number" min="1" required></label>
-  <div class="modal-note">Production: create/schedule the session in Booklink first so Booklink remains the capacity authority.</div>
-  <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">CREATE CLASS</button></div>
+<dialog id="instructorDialog"><form id="instructorForm" class="modal">
+  <div class="modal-head"><div><p class="eyebrow">INSTRUCTOR</p><h2>Add instructor</h2></div><button type="button" class="close" data-close>×</button></div>
+  <div class="two"><label>Name<input id="instructorName" required></label><label>Role<select id="instructorRole"><option value="main">Main instructor</option><option value="student">Student instructor</option><option value="guest">Guest instructor</option></select></label></div>
+  <div class="two"><label>Base pay (R)<input id="instructorBase" type="number" min="0" value="200" required></label><label>Commission / rider above 5 (R)<input id="instructorCommission" type="number" min="0" value="10" required></label></div>
+  <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">ADD INSTRUCTOR</button></div>
 </form></dialog>
 
 <dialog id="memberDialog"><form id="memberForm" class="modal">
   <div class="modal-head"><div><p class="eyebrow">MONTHLY UNLIMITED</p><h2>Add member</h2></div><button type="button" class="close" data-close>×</button></div>
   <div class="two"><label>Name<input id="memberName" required></label><label>Mobile<input id="memberMobile"></label></div>
   <label>Email<input id="memberEmail" type="email"></label>
-  <div class="two"><label>Monthly amount (R)<input id="memberAmount" type="number" min="0" required></label><label>PayFast reference<input id="memberPayfastRef" placeholder="Optional"></label></div>
-  <div class="modal-note">Set up the recurring PayFast subscription first, then add the member here. This tracker handles the monthly reconciliation only.</div>
+  <label>PayFast / subscription reference<input id="memberPayfastRef"></label>
+  <div class="modal-note">Payment happens outside Booklink. Once payment is confirmed, issue the hidden Monthly Unlimited package to this client in Booklink and mark it active here.</div>
   <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">ADD MEMBER</button></div>
-</form></dialog>
-
-<dialog id="instructorDialog"><form id="instructorForm" class="modal">
-  <div class="modal-head"><div><p class="eyebrow">INSTRUCTOR</p><h2>Add instructor</h2></div><button type="button" class="close" data-close>×</button></div>
-  <div class="two"><label>Name<input id="instructorName" required></label><label>Role<select id="instructorRole"><option value="main">Main instructor</option><option value="student">Student instructor</option><option value="guest">Guest instructor</option></select></label></div>
-  <div class="two"><label>Base pay (R)<input id="instructorBase" type="number" min="0" required></label><label>Commission per rider above 5 (R)<input id="instructorCommission" type="number" min="0" required></label></div>
-  <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">ADD INSTRUCTOR</button></div>
 </form></dialog>
 
 <div id="toast" class="toast"></div>
