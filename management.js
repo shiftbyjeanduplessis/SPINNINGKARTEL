@@ -1,154 +1,246 @@
-if(sessionStorage.getItem("sk_staff_auth")!=="1") location.replace("login.html");
-
 const cfg=window.SPINNING_CONFIG||{};
+const API=cfg.apiBaseUrl||"";
+const TOKEN=sessionStorage.getItem("sk_admin_token");
+if(!TOKEN) location.replace("login.html");
+
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const DEFAULT_CLASSES=[
-{id:"c1",date:"2026-09-30",day:"WED",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:8},
-{id:"c2",date:"2026-09-30",day:"WED",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:5},
-{id:"c3",date:"2026-09-30",day:"WED",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:14},
-{id:"c4",date:"2026-10-01",day:"THU",time:"06:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:4},
-{id:"c5",date:"2026-10-01",day:"THU",time:"09:00",name:"Morning Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:6},
-{id:"c6",date:"2026-10-01",day:"THU",time:"18:00",name:"Evening Ride",instructor:"Instructor TBC",rate:70,capacity:20,booked:12}
-];
-let settings=JSON.parse(localStorage.getItem("sk_settings")||"null")||{
- capacity:cfg.capacity||20,urgencyThreshold:cfg.urgencyThreshold||.70,onlineCutoffMinutes:cfg.onlineCutoffMinutes||20,
- monthlyUnlimitedPrice:cfg.monthlyUnlimitedPrice||600,monthlyUnlimitedCredits:cfg.monthlyUnlimitedCredits||100,
- defaultInstructorBase:cfg.defaultInstructorBase||200,defaultInstructorCommission:cfg.defaultInstructorCommission||10
-};
-let classes=JSON.parse(localStorage.getItem("sk_classes_v1")||"null")||DEFAULT_CLASSES;
-let walkins=JSON.parse(localStorage.getItem("sk_walkins_v1")||"[]");
-let members=JSON.parse(localStorage.getItem("sk_members_v1")||"[]");
-let instructors=JSON.parse(localStorage.getItem("sk_instructors_v1")||"null")||[
-{id:"i1",name:"Tammy",role:"main",basePay:200,commissionRate:10},
-{id:"i2",name:"Student Instructor",role:"student",basePay:150,commissionRate:10}
-];
-let attendance=JSON.parse(localStorage.getItem("sk_attendance_v1")||"{}");
+let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false};
 
-function save(){
- localStorage.setItem("sk_settings",JSON.stringify(settings));
- localStorage.setItem("sk_classes_v1",JSON.stringify(classes));
- localStorage.setItem("sk_walkins_v1",JSON.stringify(walkins));
- localStorage.setItem("sk_members_v1",JSON.stringify(members));
- localStorage.setItem("sk_instructors_v1",JSON.stringify(instructors));
- localStorage.setItem("sk_attendance_v1",JSON.stringify(attendance));
-}
-function dt(c){return new Date(`${c.date}T${c.time}:00`)}
-function stateFor(c){
- const left=Math.max(0,Number(c.capacity||settings.capacity)-Number(c.booked||0));
- const occ=Number(c.booked||0)/Math.max(1,Number(c.capacity||settings.capacity));
- const mins=(dt(c)-Date.now())/60000;
- if(mins<=0)return{left,label:"STARTED",cls:"closed",bookable:false};
- if(mins<=Number(settings.onlineCutoffMinutes))return{left,label:"ONLINE CLOSED",cls:"closed",bookable:false};
- if(left<=0)return{left,label:"FULL",cls:"full",bookable:false};
- if(occ>=Number(settings.urgencyThreshold))return{left,label:`ONLY ${left} LEFT!`,cls:"warning",bookable:true};
- return{left,label:"AVAILABLE",cls:"available",bookable:true};
-}
-function money(v){return v==null||v===""?"Rate TBC":`R${Number(v).toFixed(0)}`}
-function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1800)}
-function todayKey(){return new Date().toISOString().slice(0,10)}
-function todayClasses(){const k=todayKey();const found=classes.filter(c=>c.date===k);return found.length?found:classes.slice(0,2)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
+function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
+function addDays(date,n){const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function dateLabel(d){return new Date(d+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();}
+function roleLabel(r){return r==="student"?"Student instructor":r==="guest"?"Guest instructor":"Main instructor";}
+function money(v){return "R"+Number(v||0).toFixed(0);}
 
-function classRow(c){
- const st=stateFor(c),pct=Math.min(100,Math.round((c.booked/c.capacity)*100));
- return `<article class="class-row">
- <div class="time"><strong>${c.time}</strong><small>${c.day}</small></div>
- <div class="name"><strong>${c.name}</strong><span class="secondary-text">${money(c.rate)}</span></div>
- <div class="instructor secondary-text">${c.instructor}</div>
- <div class="cap"><strong>${c.booked} / ${c.capacity}</strong><div class="bar"><i style="width:${pct}%"></i></div><span class="badge ${st.cls}">${st.label}</span></div>
- <div class="row-actions"><button class="mini primary walkin-shortcut" data-id="${c.id}" ${st.left<=0?"disabled":""}>+ Walk-in</button><button class="mini attendance-shortcut" data-id="${c.id}">Attendance</button></div>
- </article>`;
-}
-function renderClasses(){
- $("#todayClasses").innerHTML=todayClasses().map(classRow).join("");
- $("#allClasses").innerHTML=classes.slice().sort((a,b)=>dt(a)-dt(b)).map(classRow).join("");
- $$(".walkin-shortcut").forEach(b=>b.onclick=()=>openWalkin(b.dataset.id));
- $$(".attendance-shortcut").forEach(b=>b.onclick=()=>{showView("instructors");const inp=document.querySelector(`.attendance[data-id="${b.dataset.id}"]`);if(inp){inp.focus();inp.scrollIntoView({behavior:"smooth",block:"center"})}});
- renderMetrics();fillWalkinOptions();renderPay();
-}
-function renderMetrics(){
- const list=todayClasses();$("#metricBookings").textContent=list.reduce((s,c)=>s+c.booked,0);$("#metricWalkins").textContent=walkins.filter(w=>w.date===todayKey()).length;$("#metricClasses").textContent=list.length;
- const next=classes.filter(c=>dt(c)>Date.now()).sort((a,b)=>dt(a)-dt(b))[0];$("#metricAvailable").textContent=next?stateFor(next).left:0;
-}
-function renderWalkins(){
- const el=$("#walkinList");const rows=walkins.slice().reverse().slice(0,8);
- el.innerHTML=rows.length?rows.map(w=>`<div class="walkin-row"><div><strong>${w.name}</strong><span>${w.mobile||"No mobile"}</span></div><div><strong>${w.className}</strong><span>${w.time}</span></div><div><strong>${w.payment}</strong><span>${money(w.amount)}</span></div><div><strong>Confirmed</strong><span>Booklink pending in demo</span></div></div>`).join(""):`<p class="muted">No walk-ins yet.</p>`;
-}
-function fillWalkinOptions(){
- const open=classes.filter(c=>stateFor(c).left>0&&dt(c)>Date.now()-3600000).sort((a,b)=>dt(a)-dt(b));
- $("#walkinClass").innerHTML=open.map(c=>`<option value="${c.id}">${c.day} ${c.time} · ${c.name} · ${stateFor(c).left} left</option>`).join("");
- updateWalkinNotice();
-}
-function updateWalkinNotice(){
- const c=classes.find(x=>x.id===$("#walkinClass").value),n=$("#walkinAvailability");
- if(!c){n.className="notice full";n.textContent="No class with available bikes.";return}
- const st=stateFor(c);n.className=`notice ${st.cls==="warning"?"warning":st.cls==="full"?"full":""}`;n.textContent=`${st.left} bike${st.left===1?"":"s"} available. Walk-ins remain allowed after online booking closes, subject to space.`;$("#walkinAmount").placeholder=c.rate?`Class rate R${c.rate}`:"Amount";
-}
-function openWalkin(id){
- fillWalkinOptions();if(id&&classes.some(c=>c.id===id))$("#walkinClass").value=id;updateWalkinNotice();$("#walkinDialog").showModal();
+async function api(path,options={}){
+  const headers={...(options.headers||{}),"authorization":"Bearer "+TOKEN};
+  if(options.body && !headers["content-type"]) headers["content-type"]="application/json";
+  const r=await fetch(API+path,{...options,headers,cache:"no-store"});
+  if(r.status===401){sessionStorage.clear();location.replace("login.html");throw new Error("Session expired");}
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error||"Request failed");
+  return data;
 }
 
-function monthKey(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
-function monthLabel(){return new Date().toLocaleDateString("en-ZA",{month:"long",year:"numeric"}).toUpperCase()}
-function monthRec(m){m.months=m.months||{};return m.months[monthKey()]||(m.months[monthKey()]={paid:false,issued:false})}
-function renderMembers(){
- $("#memberMonth").textContent=monthLabel();
- const el=$("#membershipList");if(!members.length){el.innerHTML=`<p class="muted">No monthly members yet.</p>`;return}
- el.innerHTML=members.map(m=>{const r=monthRec(m),active=r.paid&&r.issued;return`<article class="member-row">
- <div><strong>${m.name}</strong><span class="sub">${m.mobile||m.email||"No contact"} · R${m.amount}/month</span></div>
- <label class="check"><input type="checkbox" class="paid-check" data-id="${m.id}" ${r.paid?"checked":""}> PayFast paid</label>
- <label class="check"><input type="checkbox" class="issued-check" data-id="${m.id}" ${r.issued?"checked":""} ${!r.paid?"disabled":""}> Booklink issued</label>
- <div><span class="status-pill ${active?"active":"pending"}">${active?"ACTIVE THIS MONTH":r.paid?"ISSUE PACKAGE":"CHECK PAYMENT"}</span><span class="sub">${m.payfastRef?`PayFast ${m.payfastRef}`:"No PayFast ref"}</span></div>
- <div class="row-actions"><button class="mini remove-member" data-id="${m.id}">Remove</button></div>
- </article>`}).join("");
- $$(".paid-check").forEach(x=>x.onchange=()=>{const m=members.find(v=>v.id===x.dataset.id),r=monthRec(m);r.paid=x.checked;if(!r.paid)r.issued=false;save();renderMembers()});
- $$(".issued-check").forEach(x=>x.onchange=()=>{const m=members.find(v=>v.id===x.dataset.id),r=monthRec(m);if(!r.paid)return;r.issued=x.checked;save();renderMembers()});
- $$(".remove-member").forEach(x=>x.onclick=()=>{const m=members.find(v=>v.id===x.dataset.id);if(confirm(`Remove ${m.name} from the active membership tracker?`)){members=members.filter(v=>v.id!==m.id);save();renderMembers()}});
+function showView(name){
+  $$(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));
+  $$(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
 }
-
-function instructorFor(name){return instructors.find(i=>i.name.toLowerCase()===String(name).toLowerCase())||{id:"x"+name,name,role:"guest",basePay:settings.defaultInstructorBase,commissionRate:settings.defaultInstructorCommission}}
-function payCalc(c){const i=instructorFor(c.instructor),a=attendance[c.id]==null?null:Number(attendance[c.id]);if(a==null)return{i,a:null,commRiders:0,comm:0,total:null};const cr=Math.max(a-5,0),comm=cr*Number(i.commissionRate);return{i,a,commRiders:cr,comm,total:Number(i.basePay)+comm}}
-function renderPay(){
- const totals={};instructors.forEach(i=>totals[i.id]={i,classes:0,riders:0,comm:0,total:0});
- $("#payRows").innerHTML=classes.map(c=>{const p=payCalc(c);totals[p.i.id]=totals[p.i.id]||{i:p.i,classes:0,riders:0,comm:0,total:0};if(p.a!=null){totals[p.i.id].classes++;totals[p.i.id].riders+=p.a;totals[p.i.id].comm+=p.comm;totals[p.i.id].total+=p.total}
- return`<tr><td><strong>${c.day} ${c.time}</strong><br>${c.name}</td><td>${p.i.name}</td><td>${c.booked}</td><td><input class="attendance" data-id="${c.id}" type="number" min="0" max="${c.capacity}" value="${p.a==null?"":p.a}" placeholder="-"></td><td>R${p.i.basePay}</td><td>${p.a==null?"—":p.commRiders}</td><td>${p.a==null?"—":`R${p.comm}`}</td><td><strong>${p.total==null?"—":`R${p.total}`}</strong></td></tr>`}).join("");
- $$(".attendance").forEach(x=>x.onchange=()=>{attendance[x.dataset.id]=x.value===""?null:Math.max(0,Number(x.value));save();renderPay()});
- $("#instructorSummary").innerHTML=Object.values(totals).map(t=>`<article class="instructor-card"><strong>${t.i.name}</strong><span>${t.i.role}</span><span>R${t.i.basePay} base + R${t.i.commissionRate}/rider above 5</span><span>${t.classes} completed classes · ${t.riders} attended</span><span>Commission R${t.comm}</span><span class="total">R${t.total}</span></article>`).join("");
-}
-function renderCustomers(){
- const map=new Map();
- walkins.forEach(w=>map.set((w.email||w.mobile||w.name).toLowerCase(),{name:w.name,email:w.email||"",mobile:w.mobile||"",type:"Walk-in"}));
- members.forEach(m=>map.set((m.email||m.mobile||m.name).toLowerCase(),{name:m.name,email:m.email||"",mobile:m.mobile||"",type:"Monthly member"}));
- const rows=[...map.values()];$("#customerList").innerHTML=rows.length?rows.map(c=>`<div class="customer-row"><div><strong>${c.name}</strong><span>${c.type}</span></div><div><strong>${c.email||"—"}</strong><span>Email</span></div><div><strong>${c.mobile||"—"}</strong><span>Mobile</span></div><div><strong>Booklink source</strong><span>Production export</span></div></div>`).join(""):`<p class="muted">Production client database will come from Booklink. Demo records appear here after walk-ins or members are added.</p>`;
-}
-
-function renderSettings(){
- $("#setCapacity").value=settings.capacity;$("#setUrgency").value=Math.round(settings.urgencyThreshold*100);$("#setCutoff").value=settings.onlineCutoffMinutes;$("#setMembershipPrice").value=settings.monthlyUnlimitedPrice;$("#setMembershipCredits").value=settings.monthlyUnlimitedCredits;$("#setBasePay").value=settings.defaultInstructorBase;$("#setCommission").value=settings.defaultInstructorCommission;
-}
-function fillInstructorSelect(){$("#classInstructor").innerHTML=instructors.map(i=>`<option>${i.name}</option>`).join("")}
-function showView(name){$$(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));$$(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));if(name==="customers")renderCustomers();if(name==="settings")renderSettings()}
 $$(".nav").forEach(n=>n.onclick=()=>showView(n.dataset.view));
-$("#logoutBtn").onclick=()=>{sessionStorage.clear();location.href="login.html"};
+$("#logoutBtn").onclick=()=>{sessionStorage.clear();location.href="login.html";};
 $$("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
 $$("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
-$("#walkinClass").onchange=updateWalkinNotice;
 
-$("#walkinForm").onsubmit=e=>{
- e.preventDefault();const c=classes.find(x=>x.id===$("#walkinClass").value);if(!c||stateFor(c).left<=0)return toast("Class is full.");
- c.booked++;walkins.push({id:"w"+Date.now(),date:todayKey(),classId:c.id,className:c.name,time:c.time,name:$("#walkinName").value.trim(),mobile:$("#walkinMobile").value.trim(),email:$("#walkinEmail").value.trim(),payment:$("#walkinPayment").value,amount:$("#walkinAmount").value===""?c.rate:Number($("#walkinAmount").value)});
- save();e.target.reset();$("#walkinDialog").close();renderClasses();renderWalkins();renderCustomers();toast("Walk-in added to demo roster.");
-};
-$("#classForm").onsubmit=e=>{
- e.preventDefault();const date=$("#classDate").value;classes.push({id:"c"+Date.now(),date,day:new Date(date+"T00:00:00").toLocaleDateString("en-ZA",{weekday:"short"}).toUpperCase(),time:$("#classTime").value,name:$("#className").value.trim(),instructor:$("#classInstructor").value,rate:Number($("#classRate").value),capacity:Number($("#classCapacity").value),booked:0});save();e.target.reset();$("#classCapacity").value=settings.capacity;$("#classDialog").close();renderClasses();toast("Demo class created.");
-};
-$("#memberForm").onsubmit=e=>{
- e.preventDefault();members.push({id:"m"+Date.now(),name:$("#memberName").value.trim(),mobile:$("#memberMobile").value.trim(),email:$("#memberEmail").value.trim(),amount:Number($("#memberAmount").value),payfastRef:$("#memberPayfastRef").value.trim(),months:{}});save();e.target.reset();$("#memberAmount").value=settings.monthlyUnlimitedPrice;$("#memberDialog").close();renderMembers();renderCustomers();toast("Member added.");
-};
-$("#instructorForm").onsubmit=e=>{
- e.preventDefault();instructors.push({id:"i"+Date.now(),name:$("#instructorName").value.trim(),role:$("#instructorRole").value,basePay:Number($("#instructorBase").value),commissionRate:Number($("#instructorCommission").value)});save();e.target.reset();$("#instructorBase").value=settings.defaultInstructorBase;$("#instructorCommission").value=settings.defaultInstructorCommission;$("#instructorDialog").close();fillInstructorSelect();renderPay();toast("Instructor added.");
-};
-$("#saveSettings").onclick=()=>{
- settings={capacity:Number($("#setCapacity").value),urgencyThreshold:Number($("#setUrgency").value)/100,onlineCutoffMinutes:Number($("#setCutoff").value),monthlyUnlimitedPrice:Number($("#setMembershipPrice").value),monthlyUnlimitedCredits:Number($("#setMembershipCredits").value),defaultInstructorBase:Number($("#setBasePay").value),defaultInstructorCommission:Number($("#setCommission").value)};save();renderClasses();toast("Settings saved.");
+function classStatus(c){
+  if(c.status==="full") return '<span class="badge full">FULL</span>';
+  if(c.status==="almost_full") return '<span class="badge warning">ALMOST FULL</span>';
+  return '<span class="badge available">OPEN</span>';
+}
+
+function renderToday(){
+  const rows=state.classes.filter(c=>c.date===today());
+  $("#metricClasses").textContent=rows.length;
+  $("#metricBookings").textContent=rows.reduce((s,c)=>s+Number(c.booked||0),0);
+  $("#metricUnassigned").textContent=rows.filter(c=>!c.instructor_id).length;
+  $("#metricMembershipActions").textContent=state.memberships.filter(m=>m.payment_status==="failed"||m.payment_status==="cancelled"||(m.payment_status==="paid"&&m.booklink_package_status!=="active")).length;
+  $("#todayClasses").innerHTML=rows.length?rows.map(c=>'<article class="ops-row">'+
+    '<div class="ops-time"><strong>'+c.time+'</strong><span>'+dateLabel(c.date)+'</span></div>'+
+    '<div><strong>Spinning Class</strong><span>'+esc(c.instructor)+'</span></div>'+
+    '<div><strong>'+c.booked+' / '+c.capacity+'</strong><span>Booked seats</span></div>'+
+    '<div>'+classStatus(c)+'</div>'+
+    '<a class="mini primary" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">ROSTER ↗</a>'+
+  '</article>').join(""):'<p class="muted">No classes scheduled today.</p>';
+}
+
+function instructorOptions(selected){
+  return '<option value="">Instructor TBC</option>'+state.instructors.filter(i=>i.active!==false).map(i=>'<option value="'+i.id+'" '+(i.id===selected?'selected':'')+'>'+esc(i.name)+'</option>').join("");
+}
+
+function renderRota(){
+  let lastDate="";
+  $("#rotaList").innerHTML=state.classes.map(c=>{
+    const head=c.date!==lastDate?'<div class="rota-day">'+dateLabel(c.date)+'</div>':"";
+    lastDate=c.date;
+    return head+'<div class="rota-row">'+
+      '<div><strong>'+c.time+'</strong><span>45 min · '+c.booked+'/'+c.capacity+' booked</span></div>'+
+      '<select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select>'+
+      '<span class="rota-public">'+(c.instructor_id?'PUBLIC: '+esc(c.instructor):'PUBLIC: TBC')+'</span>'+
+    '</div>';
+  }).join("");
+}
+
+$("#saveRota").onclick=async()=>{
+  const assignments=$$(".rota-select").map(s=>({date:s.dataset.date,time:s.dataset.time,instructor_id:s.value||null}));
+  try{
+    await api("/api/admin/rota",{method:"POST",body:JSON.stringify({assignments})});
+    toast("Instructor rota saved.");
+    await refreshClasses();
+  }catch(e){toast(e.message);}
 };
 
-$("#classDate").value=todayKey();$("#classCapacity").value=settings.capacity;$("#memberAmount").value=settings.monthlyUnlimitedPrice;$("#instructorBase").value=settings.defaultInstructorBase;$("#instructorCommission").value=settings.defaultInstructorCommission;
-fillInstructorSelect();renderClasses();renderWalkins();renderMembers();renderPay();renderCustomers();renderSettings();
+function attendanceMap(){return new Map(state.attendance.map(a=>[String(a.service_date).slice(0,10)+"|"+String(a.start_time).slice(0,5),a]));}
+
+function renderAttendance(){
+  const closed=attendanceMap();
+  const t=today();
+  const rows=state.history.filter(c=>c.date<=t).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  $("#attendanceList").innerHTML=rows.length?rows.map(c=>{
+    const key=c.date+"|"+c.time, a=closed.get(key);
+    if(a){
+      return '<div class="attendance-row closed">'+
+        '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(a.instructor_name||c.instructor)+'</span></div>'+
+        '<div><strong>'+a.booked_count+'</strong><span>Booked</span></div>'+
+        '<div><strong>'+a.attended_count+'</strong><span>Attended</span></div>'+
+        '<div><strong>'+a.no_show_count+'</strong><span>No-shows</span></div>'+
+        '<span class="status-pill active">CLOSED</span>'+
+      '</div>';
+    }
+    return '<div class="attendance-row">'+
+      '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(c.instructor)+'</span></div>'+
+      '<div><strong>'+c.booked+'</strong><span>Booked</span></div>'+
+      '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="12" value="'+c.booked+'"></label>'+
+      '<button class="mini primary close-class" data-date="'+c.date+'" data-time="'+c.time+'" '+(!c.instructor_id?'disabled title="Assign an instructor first"':'')+'>CLOSE CLASS</button>'+
+    '</div>';
+  }).join(""):'<p class="muted">No classes to close yet.</p>';
+
+  $$(".close-class").forEach(b=>b.onclick=async()=>{
+    const key=b.dataset.date+"|"+b.dataset.time;
+    const inp=document.querySelector('.attendance-input[data-key="'+key+'"]');
+    try{
+      await api("/api/admin/attendance",{method:"POST",body:JSON.stringify({date:b.dataset.date,time:b.dataset.time,attended_count:Number(inp.value||0)})});
+      toast("Attendance closed.");
+      await refreshAttendancePay();
+    }catch(e){toast(e.message);}
+  });
+}
+
+function renderPay(){
+  $("#paySummary").innerHTML=state.pay.length?state.pay.map(p=>'<article class="instructor-card">'+
+    '<strong>'+esc(p.name)+'</strong><span>'+roleLabel(p.role)+'</span>'+
+    '<span>'+p.classes+' closed classes · '+p.riders+' riders</span>'+
+    '<span>'+money(p.base_pay)+' base + '+money(p.commission_rate)+' / rider above 5</span>'+
+    '<span>Commission '+money(p.commission)+'</span><span class="total">'+money(p.total)+'</span>'+
+  '</article>').join(""):'<p class="muted">Add instructors to start tracking pay.</p>';
+}
+
+function packageLabel(s){
+  return s==="active"?"ACTIVE":s==="cancel_required"?"CANCEL REQUIRED":s==="cancelled"?"CANCELLED":s==="expired"?"EXPIRED":"NOT ISSUED";
+}
+
+function renderMemberships(){
+  $("#membershipList").innerHTML=state.memberships.length?state.memberships.map(m=>'<article class="member-row live-member">'+
+    '<div><strong>'+esc(m.client_name)+'</strong><span class="sub">'+esc(m.client_email||m.client_mobile||"No contact")+'</span></div>'+
+    '<label>Payment<select class="member-payment" data-id="'+m.id+'">'+
+      ['pending','paid','failed','cancelled'].map(x=>'<option '+(m.payment_status===x?'selected':'')+'>'+x+'</option>').join("")+
+    '</select></label>'+
+    '<label>Booklink package<select class="member-package" data-id="'+m.id+'">'+
+      ['not_issued','active','cancel_required','cancelled','expired'].map(x=>'<option value="'+x+'" '+(m.booklink_package_status===x?'selected':'')+'>'+packageLabel(x)+'</option>').join("")+
+    '</select></label>'+
+    '<label>Package expiry<input class="member-expiry" data-id="'+m.id+'" type="date" value="'+(m.package_expires_on||"")+'"></label>'+
+    '<button class="mini primary member-save" data-id="'+m.id+'">SAVE</button>'+
+  '</article>').join(""):'<p class="muted">No Monthly Unlimited members yet.</p>';
+
+  $$(".member-save").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.id;
+    const payment=document.querySelector('.member-payment[data-id="'+id+'"]').value;
+    const pack=document.querySelector('.member-package[data-id="'+id+'"]').value;
+    const expiry=document.querySelector('.member-expiry[data-id="'+id+'"]').value||null;
+    try{
+      await api("/api/admin/memberships/"+id,{method:"PATCH",body:JSON.stringify({payment_status:payment,booklink_package_status:pack,package_expires_on:expiry})});
+      toast("Membership updated.");
+      await refreshMemberships();
+    }catch(e){toast(e.message);}
+  });
+}
+
+function renderInstructors(){
+  $("#instructorList").innerHTML=state.instructors.length?state.instructors.map(i=>'<article class="instructor-card">'+
+    '<strong>'+esc(i.name)+'</strong><span>'+roleLabel(i.role)+'</span>'+
+    '<span>'+money(i.base_pay)+' base</span><span>'+money(i.commission_rate)+' / rider above 5</span>'+
+  '</article>').join(""):'<p class="muted">No instructors added yet.</p>';
+}
+
+function renderWebhooks(){
+  $("#webhookUrl").textContent=API+"/webhooks/booklink";
+  $("#webhookStatus").innerHTML=state.webhookConfigured
+    ? '<strong class="ok-text">Signing secret configured.</strong> Send a Booklink test ping.'
+    : '<strong class="warn-text">Signing secret still needs to be added to the API service.</strong>';
+  $("#webhookEvents").innerHTML=state.events.length?state.events.map(e=>'<div class="event-row"><strong>'+esc(e.event_type)+'</strong><span>'+new Date(e.received_at).toLocaleString("en-ZA")+'</span><span>'+esc(e.process_note||"logged")+'</span></div>').join(""):'<p class="muted">No webhook deliveries received yet.</p>';
+  $("#syncLabel").textContent=state.webhookConfigured?"Booklink: webhook ready":"Booklink: webhook setup pending";
+}
+
+async function refreshClasses(){
+  const [future,past]=await Promise.all([
+    api("/api/admin/classes?days=14"),
+    api("/api/admin/classes?from="+addDays(today(),-7)+"&days=8")
+  ]);
+  state.classes=future.classes||[];
+  state.history=past.classes||[];
+  renderToday();renderRota();renderAttendance();
+}
+
+async function refreshMemberships(){
+  state.memberships=(await api("/api/admin/memberships")).memberships||[];
+  renderMemberships();renderToday();
+}
+
+async function refreshAttendancePay(){
+  const from=addDays(today(),-7), to=today();
+  const [a,p]=await Promise.all([
+    api("/api/admin/attendance?from="+from+"&to="+to),
+    api("/api/admin/pay?from="+addDays(today(),-30)+"&to="+to)
+  ]);
+  state.attendance=a.attendance||[]; state.pay=p.pay||[];
+  renderAttendance();renderPay();
+}
+
+async function refreshWebhooks(){
+  const w=await api("/api/admin/webhooks");
+  state.events=w.events||[];state.webhookConfigured=Boolean(w.configured);renderWebhooks();
+}
+
+$("#instructorForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    await api("/api/admin/instructors",{method:"POST",body:JSON.stringify({
+      name:$("#instructorName").value.trim(),
+      role:$("#instructorRole").value,
+      base_pay:Number($("#instructorBase").value),
+      commission_rate:Number($("#instructorCommission").value)
+    })});
+    e.target.reset();$("#instructorBase").value=200;$("#instructorCommission").value=10;$("#instructorDialog").close();
+    toast("Instructor added.");
+    state.instructors=(await api("/api/admin/instructors")).instructors||[];
+    renderInstructors();renderRota();renderToday();
+  }catch(err){toast(err.message);}
+};
+
+$("#memberForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    await api("/api/admin/memberships",{method:"POST",body:JSON.stringify({
+      client_name:$("#memberName").value.trim(),
+      client_email:$("#memberEmail").value.trim()||null,
+      client_mobile:$("#memberMobile").value.trim()||null,
+      payfast_reference:$("#memberPayfastRef").value.trim()||null
+    })});
+    e.target.reset();$("#memberDialog").close();toast("Member added.");await refreshMemberships();
+  }catch(err){toast(err.message);}
+};
+
+async function boot(){
+  try{
+    const health=await fetch(API+"/health",{cache:"no-store"});
+    if(!health.ok) throw new Error("API offline");
+    const [i,m]=await Promise.all([api("/api/admin/instructors"),api("/api/admin/memberships")]);
+    state.instructors=i.instructors||[];state.memberships=m.memberships||[];
+    renderInstructors();renderMemberships();
+    await Promise.all([refreshClasses(),refreshAttendancePay(),refreshWebhooks()]);
+  }catch(e){
+    $("#syncLabel").textContent="Studio API offline";
+    toast("Studio API is not ready yet.");
+  }
+}
+boot();
