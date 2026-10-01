@@ -1,0 +1,14 @@
+{
+  "name": "spinning-kartel-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node api-server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
