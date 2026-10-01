@@ -22,3 +22,202 @@ footer{padding:28px clamp(18px,5vw,72px);display:flex;justify-content:space-betw
 .class-instructor{margin-top:5px!important;color:#aeb5bf!important}.class-instructor strong{color:#fff}.mini-book.disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
 @media(max-width:1100px){.home-schedule{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:640px){.home-schedule{grid-template-columns:1fr}}
+
+
+/* Atmosphere refresh: dark studio, colourful moving light, motivation */
+:root{
+  --cyan:#22d3ee;
+  --violet:#8b5cf6;
+  --magenta:#ec4899;
+  --hot:#f43f5e;
+  --orange:#fb923c;
+}
+body{
+  background:
+    radial-gradient(circle at 12% 18%,rgba(34,211,238,.055),transparent 24%),
+    radial-gradient(circle at 84% 12%,rgba(236,72,153,.05),transparent 22%),
+    radial-gradient(circle at 48% 72%,rgba(139,92,246,.045),transparent 28%),
+    var(--bg);
+}
+.public-header{
+  background:rgba(5,6,9,.90);
+  box-shadow:0 12px 40px rgba(0,0,0,.24);
+}
+.pill.primary,.mini-book{
+  background:linear-gradient(110deg,#176bff 0%,#7c3aed 52%,#ec4899 100%);
+  box-shadow:0 10px 30px rgba(124,58,237,.22);
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:1;
+  background:
+    radial-gradient(ellipse at 72% 22%,rgba(236,72,153,.25),transparent 23%),
+    radial-gradient(ellipse at 84% 65%,rgba(34,211,238,.20),transparent 25%),
+    radial-gradient(ellipse at 55% 84%,rgba(139,92,246,.22),transparent 30%),
+    radial-gradient(ellipse at 94% 40%,rgba(251,146,60,.13),transparent 18%);
+  mix-blend-mode:screen;
+}
+.hero-overlay{
+  background:
+    linear-gradient(90deg,rgba(5,6,9,1) 0%,rgba(5,6,9,.98) 24%,rgba(5,6,9,.70) 52%,rgba(5,6,9,.12) 84%,rgba(5,6,9,.26) 100%),
+    linear-gradient(0deg,rgba(5,6,9,.90),rgba(5,6,9,0) 58%);
+}
+.hero h1{
+  text-shadow:0 0 28px rgba(255,255,255,.055);
+}
+.hero-lead{
+  color:#d3d7df;
+  max-width:690px;
+}
+.eyebrow.blue{
+  color:#a7f3ff;
+}
+.hero-facts strong{
+  color:#fff;
+}
+.hero-facts i:nth-of-type(1){background:var(--cyan)}
+.hero-facts i:nth-of-type(2){background:var(--violet)}
+.hero-facts i:nth-of-type(3){background:var(--magenta)}
+.hero-facts i:nth-of-type(4){background:var(--orange)}
+.motivation-lights,.studio-signs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.motivation-lights{
+  margin:24px 0 5px;
+}
+.motivation-lights span,.studio-signs span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:35px;
+  padding:0 13px;
+  background:#fff;
+  color:#050609;
+  border:1px solid rgba(255,255,255,.98);
+  border-radius:3px;
+  font-size:9px;
+  font-weight:1000;
+  letter-spacing:.12em;
+  box-shadow:
+    0 0 7px rgba(255,255,255,.92),
+    0 0 22px rgba(255,255,255,.28);
+}
+.motivation-lights span:nth-child(2),.studio-signs span:nth-child(2){transform:rotate(-1deg)}
+.motivation-lights span:nth-child(3),.studio-signs span:nth-child(3){transform:rotate(1deg)}
+.opening-strip{
+  background:
+    linear-gradient(105deg,#0d47b9 0%,#6d28d9 35%,#db2777 67%,#0f6bcf 100%);
+  background-size:180% 180%;
+  animation:lightShift 12s ease infinite;
+  box-shadow:0 10px 34px rgba(124,58,237,.15);
+}
+@keyframes lightShift{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+.rides{
+  background:
+    radial-gradient(circle at 92% 18%,rgba(34,211,238,.08),transparent 25%),
+    radial-gradient(circle at 8% 82%,rgba(139,92,246,.07),transparent 26%),
+    #080a0e;
+}
+.home-class .time strong{
+  color:#fff;
+  text-shadow:0 0 18px rgba(34,211,238,.20);
+}
+.home-class:nth-child(4n+1){border-top-color:rgba(34,211,238,.55)}
+.home-class:nth-child(4n+2){border-top-color:rgba(139,92,246,.55)}
+.home-class:nth-child(4n+3){border-top-color:rgba(236,72,153,.55)}
+.home-class:nth-child(4n+4){border-top-color:rgba(251,146,60,.55)}
+.status.available{
+  color:#c7fff0;
+  border-color:rgba(94,228,138,.35);
+}
+.status.warning{
+  color:#fff;
+  border-color:#ffba24;
+  background:linear-gradient(110deg,rgba(255,184,0,.12),rgba(236,72,153,.10));
+  box-shadow:0 0 22px rgba(255,187,36,.42);
+}
+.ways{
+  background:
+    radial-gradient(circle at 12% 14%,rgba(236,72,153,.07),transparent 25%),
+    radial-gradient(circle at 92% 72%,rgba(34,211,238,.06),transparent 28%),
+    #0d1015;
+}
+.way-no,.text-link{
+  color:#9eefff;
+}
+.way-list article:nth-child(2) .way-no{color:#b99cff}
+.way-list article:nth-child(3) .way-no{color:#ff9fd1}
+.way-list article:nth-child(4) .way-no{color:#ffc47a}
+.studio{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 76% 18%,rgba(236,72,153,.10),transparent 24%),
+    radial-gradient(circle at 88% 76%,rgba(34,211,238,.10),transparent 25%),
+    radial-gradient(circle at 18% 70%,rgba(139,92,246,.08),transparent 26%),
+    #07090d;
+}
+.studio::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg,transparent 60%,rgba(255,255,255,.025));
+}
+.studio-photos img{
+  filter:saturate(1.18) contrast(1.08);
+}
+.studio-signs{
+  margin-top:24px;
+}
+.studio-signs span{
+  min-height:32px;
+  font-size:8px;
+  padding:0 11px;
+}
+.instructors{
+  background:
+    radial-gradient(circle at 12% 28%,rgba(34,211,238,.055),transparent 22%),
+    radial-gradient(circle at 82% 18%,rgba(236,72,153,.055),transparent 24%),
+    #0b0e13;
+}
+.instructor-placeholder{
+  background:
+    radial-gradient(circle at 28% 25%,rgba(34,211,238,.22),transparent 40%),
+    radial-gradient(circle at 74% 68%,rgba(236,72,153,.22),transparent 42%),
+    linear-gradient(145deg,#171b24,#0b0e13);
+  border-bottom:2px solid transparent;
+  border-image:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta),var(--orange)) 1;
+  color:#fff;
+}
+.how{
+  background:
+    radial-gradient(circle at 82% 70%,rgba(139,92,246,.06),transparent 28%),
+    #080a0e;
+}
+.steps article:nth-child(1) span{color:var(--cyan)}
+.steps article:nth-child(2) span{color:#b99cff}
+.steps article:nth-child(3) span{color:#ff9fd1}
+.steps article:nth-child(4) span{color:#ffc47a}
+footer{
+  background:
+    linear-gradient(180deg,#050609,#07080b);
+}
+@media(max-width:640px){
+  .motivation-lights,.studio-signs{gap:7px}
+  .motivation-lights span,.studio-signs span{font-size:8px;min-height:31px;padding:0 9px}
+  .hero::before{
+    background:
+      radial-gradient(ellipse at 80% 20%,rgba(236,72,153,.18),transparent 23%),
+      radial-gradient(ellipse at 82% 66%,rgba(34,211,238,.16),transparent 25%),
+      radial-gradient(ellipse at 48% 84%,rgba(139,92,246,.16),transparent 28%);
+  }
+}
