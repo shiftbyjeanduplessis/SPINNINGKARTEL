@@ -1,72 +1,65 @@
-const cfg = window.SPINNING_CONFIG || {};
-const API = cfg.apiBaseUrl || "";
-const BOOKLINK = cfg.booklinkPublicUrl || "https://bklnk.co.za/spinningkartel";
-const $ = s => document.querySelector(s);
+const cfg=window.SPINNING_CONFIG||{};
+const API=cfg.apiBaseUrl||"";
+const BOOKLINK=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
+const $=s=>document.querySelector(s);
 
-function money(v){ return v==null||v==="" ? "RATE TBC" : "R"+Number(v).toFixed(0); }
-
-function futureClass(c){
-  const d = new Date(c.date+"T"+c.time+":00+02:00");
-  return d.getTime() > Date.now() - 5*60*1000;
-}
-
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function futureClass(c){return new Date(c.date+"T"+c.time+":00+02:00").getTime()>Date.now()-5*60*1000}
 function dayLabel(date){
-  return new Date(date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
+  const d=new Date(date+"T12:00:00");
+  const today=new Date();
+  const same=d.toDateString()===today.toDateString();
+  return same?"TODAY":d.toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
 }
-
+function rideName(c){
+  if(c.time==="05:30") return "Morning Ride";
+  if(c.time==="08:00") return "Power Ride";
+  if(c.time==="18:00") return "Ride & Rhythm";
+  if(c.time==="19:00") return "Endurance Ride";
+  if(c.time==="07:00") return "Weekend Kickstart";
+  return "Spinning Class";
+}
 function statusMeta(status){
-  if(status==="full") return {label:"FULL", cls:"full", disabled:true};
-  if(status==="almost_full") return {label:"ALMOST FULL", cls:"warning", disabled:false};
-  return {label:"BOOK ONLINE", cls:"available", disabled:false};
+  if(status==="full") return {label:"FULL",cls:"full"};
+  if(status==="almost_full") return {label:"ALMOST FULL",cls:"warning"};
+  return {label:"OPEN",cls:""};
 }
-
-function classCard(c){
+function railCard(c){
   const st=statusMeta(c.status);
-  const book=st.disabled
-    ? '<span class="mini-book disabled">FULL</span>'
-    : '<a class="mini-book" href="'+BOOKLINK+'" aria-label="Book '+c.date+' '+c.time+' Spinning Kartel class">BOOK</a>';
-  return '<article class="home-class">'+
-    '<div class="time"><strong>'+c.time+'</strong><small>'+dayLabel(c.date)+'</small></div>'+
-    '<div class="meta"><h3>Spinning Class</h3><p>'+c.duration+' min · '+money(c.rate)+'</p><p class="class-instructor">with <strong>'+escapeHtml(c.instructor||"Instructor TBC")+'</strong></p></div>'+
-    '<div class="state"><span class="status '+st.cls+'">'+st.label+'</span>'+book+'</div>'+
+  return '<article class="rail-card">'+
+    '<small>'+dayLabel(c.date)+'</small>'+
+    '<strong>'+esc(c.time)+'</strong>'+
+    '<span>'+esc(rideName(c))+'</span>'+
+    '<span class="rail-status '+st.cls+'">'+st.label+'</span>'+
+    '<a href="'+BOOKLINK+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>'+
   '</article>';
 }
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-}
-
-function fallbackClasses(){
-  const rows=[];
-  const start=new Date();
+function fallback(){
+  const rows=[],start=new Date();
   for(let i=0;i<8;i++){
-    const d=new Date(start); d.setDate(start.getDate()+i);
+    const d=new Date(start);d.setDate(start.getDate()+i);
     const day=d.getDay();
     const date=d.toISOString().slice(0,10);
     const times=day===6?(cfg.saturdayTimes||["07:00","08:00"]):(day>=1&&day<=5?(cfg.weekdayTimes||["05:30","08:00","18:00","19:00"]):[]);
-    times.forEach(time=>rows.push({date,time,duration:45,rate:70,instructor:"Instructor TBC",status:"open"}));
+    times.forEach(time=>rows.push({date,time,status:"open"}));
   }
   return rows.filter(futureClass);
 }
-
 async function loadSchedule(){
-  const el=$("#homeSchedule"); if(!el) return;
+  const el=$("#homeSchedule");if(!el)return;
   let rows=[];
   try{
     const r=await fetch(API+"/api/public/classes?days=10",{cache:"no-store"});
-    if(!r.ok) throw new Error("api");
+    if(!r.ok)throw new Error("api");
     rows=(await r.json()).classes||[];
-  }catch(e){
-    rows=fallbackClasses();
-  }
-  rows=rows.filter(futureClass).slice(0,10);
-  el.innerHTML=rows.length?rows.map(classCard).join(""):'<p class="muted">Upcoming classes are being loaded. You can still book directly through Booklink.</p>';
+  }catch(e){rows=fallback()}
+  rows=rows.filter(futureClass).slice(0,4);
+  el.innerHTML=rows.length?rows.map(railCard).join(""):'<article class="rail-card loading-card"><span>Open Booklink to see upcoming classes.</span></article>';
 }
-
 const packageHelpBtn=$("#packageHelpBtn");
 if(packageHelpBtn){
   packageHelpBtn.addEventListener("click",()=>{
-    const el=$("#packageHelp"); if(el) el.hidden=!el.hidden;
+    const el=$("#packageHelp");if(el)el.hidden=!el.hidden;
   });
 }
 loadSchedule();
