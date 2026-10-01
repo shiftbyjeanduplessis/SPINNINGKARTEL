@@ -1,18 +1,27 @@
-
-const emailForm=document.querySelector("#emailForm");
-const codeForm=document.querySelector("#codeForm");
+const cfg=window.SPINNING_CONFIG||{};
+const API=cfg.apiBaseUrl||"";
+const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
-emailForm.addEventListener("submit",e=>{
+
+if(sessionStorage.getItem("sk_admin_token")) location.replace("management.html");
+
+form.addEventListener("submit",async e=>{
   e.preventDefault();
+  msg.textContent="Signing in…";
   const email=document.querySelector("#staffEmail").value.trim();
-  sessionStorage.setItem("sk_pending_email",email);
-  emailForm.hidden=true; codeForm.hidden=false;
-  msg.textContent=`Demo code sent to ${email}.`;
-});
-codeForm.addEventListener("submit",e=>{
-  e.preventDefault();
-  if(document.querySelector("#staffCode").value!=="246810"){msg.textContent="Incorrect demo code.";return;}
-  sessionStorage.setItem("sk_staff_auth","1");
-  sessionStorage.setItem("sk_staff_email",sessionStorage.getItem("sk_pending_email")||"staff");
-  location.href="management.html";
+  const code=document.querySelector("#staffCode").value.trim();
+  try{
+    const r=await fetch(API+"/api/admin/login",{
+      method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({email,code})
+    });
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error==="too_many_attempts"?"Too many attempts. Try again in 15 minutes.":"Incorrect access code.");
+    sessionStorage.setItem("sk_admin_token",data.token);
+    sessionStorage.setItem("sk_staff_email",email);
+    location.href="management.html";
+  }catch(err){
+    msg.textContent=err.message||"Could not sign in.";
+  }
 });
