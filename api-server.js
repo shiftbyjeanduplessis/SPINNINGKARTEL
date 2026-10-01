@@ -137,8 +137,8 @@ function statusFor(booked, capacity) {
   return 'open';
 }
 
-async function classRows(days) {
-  const from = todayZA();
+async function classRows(days, startDate) {
+  const from = startDate || todayZA();
   const dates = [];
   for (let i = 0; i < days; i++) dates.push(addDays(from, i));
   const to = dates[dates.length - 1];
@@ -328,7 +328,7 @@ async function handler(req, res) {
 
     if (req.method === 'GET' && path === '/api/public/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
-      return json(res, 200, {classes: await classRows(days)}, origin);
+      return json(res, 200, {classes: await classRows(days, u.searchParams.get('from') || undefined)}, origin);
     }
 
     if (req.method === 'POST' && path === '/webhooks/booklink') {
@@ -383,7 +383,7 @@ async function handler(req, res) {
 
     if (req.method === 'GET' && path === '/api/admin/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
-      return json(res, 200, {classes:await classRows(days)}, origin);
+      return json(res, 200, {classes:await classRows(days, u.searchParams.get('from') || undefined)}, origin);
     }
 
     if (req.method === 'POST' && path === '/api/admin/rota') {
