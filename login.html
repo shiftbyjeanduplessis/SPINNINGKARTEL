@@ -9,21 +9,16 @@
   <a class="brand login-brand" href="index.html"><img class="brand-logo" src="logo.webp" alt="Spinning Kartel"><span><strong>SPINNING KARTEL</strong><small>Staff access</small></span></a>
   <p class="eyebrow">MANAGEMENT</p>
   <h1>Staff login</h1>
-  <p class="muted">Production will use an email one-time code. This build uses a local demo code so the workflow can be tested now.</p>
-
-  <form id="emailForm">
-    <label>Email<input id="staffEmail" type="email" required placeholder="name@studio.co.za" autocomplete="email"></label>
-    <button class="button full" type="submit">SEND CODE</button>
-  </form>
-
-  <form id="codeForm" hidden>
-    <label>6-digit code<input id="staffCode" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required placeholder="123456"></label>
-    <p class="demo-code">Demo code: <strong>246810</strong></p>
+  <p class="muted">Use the studio staff access code. The session expires automatically.</p>
+  <form id="loginForm">
+    <label>Email<input id="staffEmail" type="email" required placeholder="staff@spinningkartel.co.za" autocomplete="email"></label>
+    <label>Access code<input id="staffCode" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required placeholder="6-digit code"></label>
     <button class="button full" type="submit">SIGN IN</button>
   </form>
   <p id="loginMessage" class="form-message"></p>
   <a class="back-link" href="index.html">← Back to public site</a>
 </main>
+<script src="config.js"></script>
 <script src="login.js"></script>
 </body>
 </html>
