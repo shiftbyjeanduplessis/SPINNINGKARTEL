@@ -3,7 +3,7 @@ window.SPINNING_CONFIG = {
   studioName: "Spinning Kartel",
   capacity: 20,
   dropInPrice: 70,
-  firstWeekTimes: ["06:00","09:00","18:00"],
+  firstWeekTimes: ["05:30","08:00","18:00","19:00"],
   urgencyThreshold: 0.70,
   onlineCutoffMinutes: 20,
   monthlyUnlimitedPrice: 600,
@@ -12,9 +12,9 @@ window.SPINNING_CONFIG = {
   defaultInstructorCommission: 10,
 
   // Replace when Booklink is configured.
-  booklinkPublicUrl: "https://app.booklink.co.za",
+  booklinkPublicUrl: "https://bklnk.co.za/spinningkartel",
   booklinkPackageHelpText: "Use the personal Booklink package link sent to you by email or WhatsApp.",
 
-  // Production switch. Keep false until the real Booklink embed / integration is installed.
-  liveBooklink: false
+  // The public booking page is live. Availability is still controlled by Booklink itself.
+  liveBooklink: true
 };
