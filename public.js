@@ -1,7 +1,7 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
 const BOOKING_URL=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
-const LAUNCH_DATE="2026-10-05";
+const LAUNCH_DATE="2026-10-12";
 const $=s=>document.querySelector(s);
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
