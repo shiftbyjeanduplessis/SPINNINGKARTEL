@@ -38,12 +38,13 @@ section{scroll-margin-top:82px}
 .site-header>.button{justify-self:end}
 .header-actions{display:flex;align-items:center;justify-self:end;gap:10px}
 .header-whatsapp{
-  min-height:30px;padding:0 11px;border-radius:999px;
-  display:inline-flex;align-items:center;gap:7px;
+  min-height:34px;padding:0 14px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:8px;
   background:#25D366;color:#fff;text-decoration:none;
-  font-size:8px;font-weight:1000;letter-spacing:.045em;white-space:nowrap
+  font-size:9px;font-weight:1000;letter-spacing:.045em;white-space:nowrap;
+  transform:translateX(-10px)
 }
-.header-whatsapp strong{font-size:9px;font-weight:1000;letter-spacing:.02em}
+.header-whatsapp strong{font-size:10px;font-weight:1000;letter-spacing:.02em}
 .header-whatsapp:hover{background:#2ee070}
 
 .button{
@@ -240,7 +241,7 @@ footer{
 @media(max-width:560px){
   .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}
   .header-actions{gap:7px}
-  .header-whatsapp{min-height:28px;padding:0 9px;font-size:7px}
+  .header-whatsapp{min-height:28px;padding:0 9px;font-size:7px;transform:none}
   .header-whatsapp strong{display:none}
   .site-header .header-actions>.button{min-height:36px;padding:0 11px;font-size:7px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
