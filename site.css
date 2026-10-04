@@ -40,7 +40,7 @@ section{scroll-margin-top:82px}
 .header-whatsapp{
   min-height:30px;padding:0 11px;border-radius:999px;
   display:inline-flex;align-items:center;gap:7px;
-  background:#25D366;color:#06130a;text-decoration:none;
+  background:#25D366;color:#fff;text-decoration:none;
   font-size:8px;font-weight:1000;letter-spacing:.045em;white-space:nowrap
 }
 .header-whatsapp strong{font-size:9px;font-weight:1000;letter-spacing:.02em}
