@@ -36,6 +36,15 @@ section{scroll-margin-top:82px}
 .site-header nav{display:flex;gap:28px;align-items:center}
 .site-header nav a{text-decoration:none;text-transform:uppercase;font-size:9px;font-weight:900;letter-spacing:.10em;color:#bcc5d0}
 .site-header>.button{justify-self:end}
+.header-actions{display:flex;align-items:center;justify-self:end;gap:10px}
+.header-whatsapp{
+  min-height:30px;padding:0 11px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:7px;
+  background:#25D366;color:#06130a;text-decoration:none;
+  font-size:8px;font-weight:1000;letter-spacing:.045em;white-space:nowrap
+}
+.header-whatsapp strong{font-size:9px;font-weight:1000;letter-spacing:.02em}
+.header-whatsapp:hover{background:#2ee070}
 
 .button{
   min-height:44px;padding:0 20px;border-radius:999px;
@@ -229,12 +238,11 @@ footer{
   .faq{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}.header-actions{display:flex;align-items:center;gap:16px}
-.header-contact{display:flex;flex-direction:column;align-items:flex-end;text-decoration:none;line-height:1.05}
-.header-contact span{font-size:7px;font-weight:900;letter-spacing:.12em;color:#7f8996}
-.header-contact strong{margin-top:4px;font-size:11px;letter-spacing:.03em;color:#fff}
-.header-contact:hover strong{color:#8feeff}
-.site-header .header-actions>.button{min-height:38px;padding:0 14px;font-size:8px}
+  .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}
+  .header-actions{gap:7px}
+  .header-whatsapp{min-height:28px;padding:0 9px;font-size:7px}
+  .header-whatsapp strong{display:none}
+  .site-header .header-actions>.button{min-height:36px;padding:0 11px;font-size:7px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
   .hero{min-height:560px}.hero-copy{width:100%;min-height:560px}.hero-image{min-height:560px;background-size:cover;background-position:center}
   .schedule-section,.pricing,.studio,.experience,.faq{padding-left:14px;padding-right:14px}
