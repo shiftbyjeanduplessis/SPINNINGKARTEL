@@ -201,6 +201,9 @@ section{scroll-margin-top:82px}
     radial-gradient(circle at 50% -25%,rgba(34,211,238,.12),transparent 34%),#050609
 }
 .final-cta h2{margin-bottom:28px;font-size:clamp(54px,7vw,94px)}
+.contact-enquiries{margin:18px 0 0;color:#aeb6c0;font-size:13px}
+.contact-enquiries a{color:#fff;font-weight:900;text-decoration:none}
+.contact-enquiries a:hover{text-decoration:underline}
 
 footer{
   padding:24px clamp(18px,4vw,58px);display:flex;justify-content:space-between;align-items:center;gap:20px;background:#040508
