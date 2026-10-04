@@ -229,7 +229,12 @@ footer{
   .faq{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}.site-header>.button{min-height:38px;padding:0 14px;font-size:8px}
+  .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}.header-actions{display:flex;align-items:center;gap:16px}
+.header-contact{display:flex;flex-direction:column;align-items:flex-end;text-decoration:none;line-height:1.05}
+.header-contact span{font-size:7px;font-weight:900;letter-spacing:.12em;color:#7f8996}
+.header-contact strong{margin-top:4px;font-size:11px;letter-spacing:.03em;color:#fff}
+.header-contact:hover strong{color:#8feeff}
+.site-header .header-actions>.button{min-height:38px;padding:0 14px;font-size:8px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
   .hero{min-height:560px}.hero-copy{width:100%;min-height:560px}.hero-image{min-height:560px;background-size:cover;background-position:center}
   .schedule-section,.pricing,.studio,.experience,.faq{padding-left:14px;padding-right:14px}
