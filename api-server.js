@@ -133,7 +133,7 @@ function isoWeekday(dateStr) {
 
 function statusFor(booked, capacity) {
   if (booked >= capacity) return 'full';
-  if (capacity > 0 && booked / capacity >= 0.70) return 'almost_full';
+  if (capacity > 0 && booked / capacity >= 0.75) return 'almost_full';
   return 'open';
 }
 
