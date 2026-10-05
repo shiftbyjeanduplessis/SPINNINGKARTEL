@@ -2,16 +2,20 @@ const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
 const BOOKING_URL=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
 const LAUNCH_DATE="2026-10-12";
+const EARLY_CLASSES=new Set([
+  "2026-10-05|18:00",
+  "2026-10-06|05:30",
+  "2026-10-07|08:00"
+]);
 const $=s=>document.querySelector(s);
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function futureClass(c){
-  if(c.date<LAUNCH_DATE)return false;
+  if(c.date<LAUNCH_DATE && !EARLY_CLASSES.has(c.date+"|"+c.time))return false;
   return new Date(c.date+"T"+c.time+":00+02:00").getTime()>Date.now()-5*60*1000;
 }
 function scheduleStartDate(){
-  const today=new Date().toLocaleDateString("en-CA",{timeZone:"Africa/Johannesburg"});
-  return today<LAUNCH_DATE?LAUNCH_DATE:today;
+  return new Date().toLocaleDateString("en-CA",{timeZone:"Africa/Johannesburg"});
 }
 function prettyDate(date){
   return new Date(date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
