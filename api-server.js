@@ -554,5 +554,26 @@ async function handler(req, res) {
   }
 }
 
+async function logBooklinkDiagnostics() {
+  try {
+    const recent = await pool.query(`
+      SELECT event_type,received_at,processed,process_note
+      FROM sk_webhook_events
+      ORDER BY id DESC
+      LIMIT 40
+    `);
+    const counts = await pool.query(`
+      SELECT event_type,COUNT(*)::int AS count
+      FROM sk_webhook_events
+      GROUP BY event_type
+      ORDER BY count DESC,event_type
+    `);
+    console.log('BOOKLINK_EVENT_DIAG ' + JSON.stringify({recent:recent.rows,counts:counts.rows}));
+  } catch (e) {
+    console.error('BOOKLINK_EVENT_DIAG_ERROR', e.message);
+  }
+}
+
 const server = http.createServer(handler);
-server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT));
+logBooklinkDiagnostics()
+  .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
