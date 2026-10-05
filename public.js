@@ -84,7 +84,6 @@ async function bootSchedule(){
     if(!r.ok)throw new Error("api");
     rows=(await r.json()).classes||[];
   }catch(e){rows=fallback()}
-  rows=rows.map(c=>(c.date==="2026-10-05"&&c.time==="18:00")?{...c,status:"full",booked:12,capacity:12}:c);
   rows=rows.filter(futureClass);
   const quick=$("#quickSchedule");
   if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||'<div class="schedule-loading">No upcoming classes found.</div>';
