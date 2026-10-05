@@ -568,7 +568,43 @@ async function logBooklinkDiagnostics() {
       GROUP BY event_type
       ORDER BY count DESC,event_type
     `);
-    console.log('BOOKLINK_EVENT_DIAG ' + JSON.stringify({recent:recent.rows,counts:counts.rows}));
+    const sampleQ = await pool.query(`
+      SELECT payload
+      FROM sk_webhook_events
+      WHERE event_type='booking.confirmed'
+      ORDER BY id DESC
+      LIMIT 1
+    `);
+    const data = sampleQ.rows[0]?.payload?.data || {};
+    const safeSample = {
+      keys:Object.keys(data),
+      service_id:data.service_id ?? null,
+      service_name:data.service_name ?? null,
+      offering_id:data.offering_id ?? null,
+      offering_name:data.offering_name ?? null,
+      start_time:data.start_time ?? null,
+      session_id:data.session_id ?? null,
+      session_start_time:data.session_start_time ?? null,
+      service: data.service ? {keys:Object.keys(data.service), id:data.service.id ?? null, name:data.service.name ?? null} : null,
+      offering: data.offering ? {keys:Object.keys(data.offering), id:data.offering.id ?? null, name:data.offering.name ?? null} : null,
+      session: data.session ? {
+        keys:Object.keys(data.session),
+        id:data.session.id ?? null,
+        service_id:data.session.service_id ?? null,
+        offering_id:data.session.offering_id ?? null,
+        service_name:data.session.service_name ?? null,
+        offering_name:data.session.offering_name ?? null,
+        start_time:data.session.start_time ?? data.session.starts_at ?? data.session.start_at ?? null
+      } : null,
+      items:Array.isArray(data.items) ? data.items.map(i=>({
+        keys:Object.keys(i),
+        service_id:i.service_id ?? i.service?.id ?? null,
+        service_name:i.service_name ?? i.service?.name ?? null,
+        offering_id:i.offering_id ?? i.offering?.id ?? null,
+        offering_name:i.offering_name ?? i.offering?.name ?? null
+      })) : null
+    };
+    console.log('BOOKLINK_EVENT_DIAG ' + JSON.stringify({recent:recent.rows,counts:counts.rows,safeSample}));
   } catch (e) {
     console.error('BOOKLINK_EVENT_DIAG_ERROR', e.message);
   }
