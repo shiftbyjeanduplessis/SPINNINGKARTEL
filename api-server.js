@@ -554,62 +554,62 @@ async function handler(req, res) {
   }
 }
 
-async function logBooklinkDiagnostics() {
-  try {
-    const recent = await pool.query(`
-      SELECT event_type,received_at,processed,process_note
-      FROM sk_webhook_events
-      ORDER BY id DESC
-      LIMIT 40
-    `);
-    const counts = await pool.query(`
-      SELECT event_type,COUNT(*)::int AS count
-      FROM sk_webhook_events
-      GROUP BY event_type
-      ORDER BY count DESC,event_type
-    `);
-    const sampleQ = await pool.query(`
-      SELECT payload
-      FROM sk_webhook_events
-      WHERE event_type='booking.confirmed'
-      ORDER BY id DESC
-      LIMIT 1
-    `);
-    const data = sampleQ.rows[0]?.payload?.data || {};
-    const safeSample = {
-      keys:Object.keys(data),
-      service_id:data.service_id ?? null,
-      service_name:data.service_name ?? null,
-      offering_id:data.offering_id ?? null,
-      offering_name:data.offering_name ?? null,
-      start_time:data.start_time ?? null,
-      session_id:data.session_id ?? null,
-      session_start_time:data.session_start_time ?? null,
-      service: data.service ? {keys:Object.keys(data.service), id:data.service.id ?? null, name:data.service.name ?? null} : null,
-      offering: data.offering ? {keys:Object.keys(data.offering), id:data.offering.id ?? null, name:data.offering.name ?? null} : null,
-      session: data.session ? {
-        keys:Object.keys(data.session),
-        id:data.session.id ?? null,
-        service_id:data.session.service_id ?? null,
-        offering_id:data.session.offering_id ?? null,
-        service_name:data.session.service_name ?? null,
-        offering_name:data.session.offering_name ?? null,
-        start_time:data.session.start_time ?? data.session.starts_at ?? data.session.start_at ?? null
-      } : null,
-      items:Array.isArray(data.items) ? data.items.map(i=>({
-        keys:Object.keys(i),
-        service_id:i.service_id ?? i.service?.id ?? null,
-        service_name:i.service_name ?? i.service?.name ?? null,
-        offering_id:i.offering_id ?? i.offering?.id ?? null,
-        offering_name:i.offering_name ?? i.offering?.name ?? null
-      })) : null
-    };
-    console.log('BOOKLINK_EVENT_DIAG ' + JSON.stringify({recent:recent.rows,counts:counts.rows,safeSample}));
-  } catch (e) {
-    console.error('BOOKLINK_EVENT_DIAG_ERROR', e.message);
+async function rebuildBooklinkSessionCounts() {
+  if (!BOOKLINK_SERVICE_ID) {
+    console.warn('BOOKLINK_SERVICE_ID missing; skipping booking count rebuild');
+    return;
   }
+
+  const q = await pool.query(`
+    SELECT id,event_type,received_at,payload
+    FROM sk_webhook_events
+    WHERE event_type IN ('booking.confirmed','booking.cancelled','booking.rescheduled')
+      AND payload->'data'->>'service_id'=$1
+    ORDER BY received_at ASC,id ASC
+  `, [BOOKLINK_SERVICE_ID]);
+
+  const latestByBooking = new Map();
+  for (const row of q.rows) {
+    const data = row.payload?.data || {};
+    const bookingId = String(data.id || '');
+    if (!bookingId) continue;
+    latestByBooking.set(bookingId, {eventType:row.event_type,data});
+  }
+
+  const counts = new Map();
+  for (const evt of latestByBooking.values()) {
+    if (evt.eventType === 'booking.cancelled') continue;
+    const dt = eventDateTime(evt.data);
+    if (!dt) continue;
+    const key = dt.date + '|' + dt.time;
+    counts.set(key, (counts.get(key) || 0) + seatCount(evt.data));
+  }
+
+  await pool.query(`
+    UPDATE sk_session_stats
+    SET booked_count=0,capacity=12,updated_at=now()
+    WHERE service_date >= '2026-10-01'
+  `);
+
+  for (const [key,booked] of counts.entries()) {
+    const [date,time] = key.split('|');
+    await pool.query(`
+      INSERT INTO sk_session_stats(service_date,start_time,booked_count,capacity,updated_at)
+      VALUES($1,$2,$3,12,now())
+      ON CONFLICT(service_date,start_time) DO UPDATE
+      SET booked_count=EXCLUDED.booked_count,
+          capacity=12,
+          updated_at=now()
+    `, [date,time,booked]);
+  }
+
+  console.log('BOOKLINK_COUNTS_REBUILT ' + JSON.stringify({
+    bookings:latestByBooking.size,
+    sessions:[...counts.entries()].map(([key,booked])=>({key,booked}))
+  }));
 }
 
 const server = http.createServer(handler);
-logBooklinkDiagnostics()
+rebuildBooklinkSessionCounts()
+  .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
