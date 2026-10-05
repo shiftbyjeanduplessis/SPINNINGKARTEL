@@ -26,12 +26,15 @@ function rideName(time){
 }
 function status(c){
   if(c.status==="full")return{label:"FULL",cls:"full"};
-  if(c.status==="almost_full")return{label:"ALMOST FULL",cls:"warning"};
+  if(c.status==="almost_full"){
+    const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
+    return{label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
+  }
   return{label:"OPEN",cls:""};
 }
 function quickCard(c){
   const s=status(c);
-  return '<article class="quick-card">'+
+  return '<article class="quick-card '+s.cls+'">'+
     '<span class="quick-status '+s.cls+'">'+s.label+'</span>'+
     '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
@@ -42,7 +45,7 @@ function quickCard(c){
 function fullCard(c){
   const s=status(c);
   const statusText=s.label==="OPEN"?"BOOK":s.label;
-  return '<article class="full-class">'+
+  return '<article class="full-class '+s.cls+'">'+
     '<div class="time">'+esc(c.time)+'</div>'+
     '<div class="desc"><strong>'+esc(rideName(c.time))+'</strong><span>45 min · R70</span></div>'+
     '<div class="book">'+statusText+'</div>'+
