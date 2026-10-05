@@ -215,9 +215,48 @@ function seatCount(data) {
 }
 
 function isSpinningBooking(data) {
-  if (BOOKLINK_SERVICE_ID && data?.service_id === BOOKLINK_SERVICE_ID) return true;
-  if (Array.isArray(data?.items) && data.items.some(i => String(i?.service_name || '').toLowerCase() === 'spinning class')) return true;
-  return String(data?.service_name || '').toLowerCase() === 'spinning class';
+  const ids = [
+    data?.service_id,
+    data?.service?.id,
+    data?.offering_id,
+    data?.offering?.id,
+    data?.session?.service_id,
+    data?.session?.service?.id,
+    data?.session?.offering_id
+  ].filter(Boolean).map(String);
+  if (BOOKLINK_SERVICE_ID && ids.includes(String(BOOKLINK_SERVICE_ID))) return true;
+
+  const names = [
+    data?.service_name,
+    data?.service?.name,
+    data?.offering_name,
+    data?.offering?.name,
+    data?.session?.service_name,
+    data?.session?.service?.name,
+    data?.session?.offering_name
+  ];
+  if (Array.isArray(data?.items)) names.push(...data.items.map(i => i?.service_name || i?.service?.name));
+  return names.some(n => String(n || '').trim().toLowerCase() === 'spinning class');
+}
+
+function eventDateTime(data) {
+  const candidates = [
+    data?.start_time,
+    data?.session_start_time,
+    data?.starts_at,
+    data?.session?.start_time,
+    data?.session?.starts_at,
+    data?.session?.start_at
+  ];
+  for (const value of candidates) {
+    if (!value) continue;
+    const parsed = localDateTime(value);
+    if (parsed) return parsed;
+  }
+  const date = data?.date || data?.service_date || data?.session?.date || data?.session?.service_date;
+  const time = data?.time || data?.start || data?.session?.time || data?.session?.start;
+  if (date && time) return {date:String(date).slice(0,10), time:String(time).slice(0,5)};
+  return null;
 }
 
 async function changeBooked(date, time, delta) {
@@ -268,9 +307,15 @@ async function handleBooklink(req, res, origin) {
     if (eventType === 'ping') {
       note = 'ping';
     } else if (body.data && isSpinningBooking(body.data)) {
-      const cur = localDateTime(body.data.start_time);
+      const cur = eventDateTime(body.data);
       const seats = seatCount(body.data);
-      if (eventType === 'booking.confirmed' && cur) {
+      if (eventType === 'enrollment.created' && cur) {
+        await changeBooked(cur.date, cur.time, seats);
+        note = 'enrollment +' + seats;
+      } else if (eventType === 'enrollment.cancelled' && cur) {
+        await changeBooked(cur.date, cur.time, -seats);
+        note = 'enrollment -' + seats;
+      } else if (eventType === 'booking.confirmed' && cur) {
         await changeBooked(cur.date, cur.time, seats);
         note = 'booking +' + seats;
       } else if (eventType === 'booking.cancelled' && cur) {
@@ -287,7 +332,7 @@ async function handleBooklink(req, res, origin) {
           LIMIT 1
         `, [String(body.data.id || ''), eventId]);
         if (prior.rows[0]?.payload?.data?.start_time) {
-          const old = localDateTime(prior.rows[0].payload.data.start_time);
+          const old = eventDateTime(prior.rows[0].payload.data);
           if (old) await changeBooked(old.date, old.time, -seatCount(prior.rows[0].payload.data));
         }
         await changeBooked(cur.date, cur.time, seats);
@@ -508,5 +553,19 @@ async function handler(req, res) {
   }
 }
 
+async function applyOneTimeBookingBaseline() {
+  await pool.query(`
+    INSERT INTO sk_session_stats(service_date,start_time,booked_count,capacity,updated_at)
+    VALUES('2026-10-05','18:00',10,12,now())
+    ON CONFLICT(service_date,start_time) DO UPDATE
+    SET booked_count=GREATEST(sk_session_stats.booked_count,10),
+        capacity=12,
+        updated_at=now()
+  `);
+  console.log('Applied one-time Booklink baseline: 2026-10-05 18:00 = at least 10/12');
+}
+
 const server = http.createServer(handler);
-server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT));
+applyOneTimeBookingBaseline()
+  .catch(e => console.error('one-time booking baseline failed', e))
+  .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
