@@ -553,19 +553,5 @@ async function handler(req, res) {
   }
 }
 
-async function applyOneTimeBookingBaseline() {
-  await pool.query(`
-    INSERT INTO sk_session_stats(service_date,start_time,booked_count,capacity,updated_at)
-    VALUES('2026-10-05','18:00',11,12,now())
-    ON CONFLICT(service_date,start_time) DO UPDATE
-    SET booked_count=11,
-        capacity=12,
-        updated_at=now()
-  `);
-  console.log('Applied one-time Booklink baseline: 2026-10-05 18:00 = 11/12');
-}
-
 const server = http.createServer(handler);
-applyOneTimeBookingBaseline()
-  .catch(e => console.error('one-time booking baseline failed', e))
-  .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
+server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT));
