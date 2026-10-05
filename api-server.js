@@ -371,15 +371,6 @@ async function handler(req, res) {
       return json(res, 200, {ok:true,db:true,now:q.rows[0].now}, origin);
     }
 
-    if (req.method === 'GET' && path === '/diag/webhook-types') {
-      const q = await pool.query(`
-        SELECT event_type,process_note,received_at
-        FROM sk_webhook_events
-        ORDER BY received_at DESC
-        LIMIT 50
-      `);
-      return json(res, 200, {events:q.rows}, origin);
-    }
 
     if (req.method === 'GET' && path === '/api/public/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
