@@ -307,36 +307,16 @@ async function handleBooklink(req, res, origin) {
     if (eventType === 'ping') {
       note = 'ping';
     } else if (body.data && isSpinningBooking(body.data)) {
-      const cur = eventDateTime(body.data);
-      const seats = seatCount(body.data);
-      if (eventType === 'enrollment.created' && cur) {
-        await changeBooked(cur.date, cur.time, seats);
-        note = 'enrollment +' + seats;
-      } else if (eventType === 'enrollment.cancelled' && cur) {
-        await changeBooked(cur.date, cur.time, -seats);
-        note = 'enrollment -' + seats;
-      } else if (eventType === 'booking.confirmed' && cur) {
-        await changeBooked(cur.date, cur.time, seats);
-        note = 'booking +' + seats;
-      } else if (eventType === 'booking.cancelled' && cur) {
-        await changeBooked(cur.date, cur.time, -seats);
-        note = 'booking -' + seats;
-      } else if (eventType === 'booking.rescheduled' && cur) {
-        const prior = await pool.query(`
-          SELECT payload
-          FROM sk_webhook_events
-          WHERE event_type IN ('booking.confirmed','booking.rescheduled')
-            AND payload->'data'->>'id'=$1
-            AND event_id<>$2
-          ORDER BY received_at DESC
-          LIMIT 1
-        `, [String(body.data.id || ''), eventId]);
-        if (prior.rows[0]?.payload?.data?.start_time) {
-          const old = eventDateTime(prior.rows[0].payload.data);
-          if (old) await changeBooked(old.date, old.time, -seatCount(prior.rows[0].payload.data));
-        }
-        await changeBooked(cur.date, cur.time, seats);
-        note = 'rescheduled';
+      const bookingEvents = new Set([
+        'booking.created',
+        'booking.confirmed',
+        'booking.cancelled',
+        'booking.rescheduled',
+        'booking.completed'
+      ]);
+      if (bookingEvents.has(eventType)) {
+        await rebuildBooklinkSessionCounts();
+        note = 'reconciled ' + eventType;
       } else {
         note = 'ignored event';
       }
@@ -563,7 +543,7 @@ async function rebuildBooklinkSessionCounts() {
   const q = await pool.query(`
     SELECT id,event_type,received_at,payload
     FROM sk_webhook_events
-    WHERE event_type IN ('booking.confirmed','booking.cancelled','booking.rescheduled')
+    WHERE event_type IN ('booking.created','booking.confirmed','booking.cancelled','booking.rescheduled','booking.completed')
       AND payload->'data'->>'service_id'=$1
     ORDER BY received_at ASC,id ASC
   `, [BOOKLINK_SERVICE_ID]);
