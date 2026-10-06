@@ -238,8 +238,11 @@ async function boot(){
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
     await Promise.all([refreshClasses(),refreshAttendancePay(),refreshWebhooks()]);
+    document.body.classList.remove("admin-auth-locked");
   }catch(e){
+    if(!localStorage.getItem("sk_admin_token")) return;
     $("#syncLabel").textContent="Studio API offline";
+    document.body.classList.remove("admin-auth-locked");
     toast("Studio API is not ready yet.");
   }
 }
