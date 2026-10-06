@@ -352,6 +352,32 @@ async function handler(req, res) {
     }
 
 
+    if (req.method === 'GET' && path === '/api/diag/booklink' && u.searchParams.get('key') === 'skdiag-6f2e9c') {
+      const q = await pool.query(`
+        SELECT event_type,received_at,processed,process_note,payload
+        FROM sk_webhook_events
+        ORDER BY id DESC
+        LIMIT 80
+      `);
+      const events=q.rows.map(r=>{
+        const d=r.payload?.data||{};
+        return {
+          event_type:r.event_type,
+          received_at:r.received_at,
+          processed:r.processed,
+          process_note:r.process_note,
+          data_keys:Object.keys(d),
+          service_id:d.service_id||d.service?.id||d.items?.[0]?.service_id||null,
+          service_name:d.service_name||d.service?.name||d.items?.[0]?.service_name||null,
+          start_time:d.start_time||d.session_start_time||d.starts_at||d.session?.start_time||d.session?.starts_at||null,
+          status:d.status||null,
+          payment_status:d.payment_status||null,
+          cohort_id:d.cohort_id||null
+        };
+      });
+      return json(res,200,{events},origin);
+    }
+
     if (req.method === 'GET' && path === '/api/public/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
       return json(res, 200, {classes: await classRows(days, u.searchParams.get('from') || undefined)}, origin);
