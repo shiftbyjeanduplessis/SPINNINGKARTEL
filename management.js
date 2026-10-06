@@ -1,6 +1,6 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
-const TOKEN=sessionStorage.getItem("sk_admin_token");
+const TOKEN=localStorage.getItem("sk_admin_token");
 if(!TOKEN) location.replace("login.html");
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -18,7 +18,7 @@ async function api(path,options={}){
   const headers={...(options.headers||{}),"authorization":"Bearer "+TOKEN};
   if(options.body && !headers["content-type"]) headers["content-type"]="application/json";
   const r=await fetch(API+path,{...options,headers,cache:"no-store"});
-  if(r.status===401){sessionStorage.clear();location.replace("login.html");throw new Error("Session expired");}
+  if(r.status===401){localStorage.removeItem("sk_admin_token");location.replace("login.html");throw new Error("Session expired");}
   const data=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(data.error||"Request failed");
   return data;
@@ -29,7 +29,7 @@ function showView(name){
   $$(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
 }
 $$(".nav").forEach(n=>n.onclick=()=>showView(n.dataset.view));
-$("#logoutBtn").onclick=()=>{sessionStorage.clear();location.href="login.html";};
+$("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html";};
 $$("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
 $$("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 
