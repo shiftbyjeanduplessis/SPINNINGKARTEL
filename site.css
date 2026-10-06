@@ -183,9 +183,12 @@ section{scroll-margin-top:82px}
 .price-card.package8::before{background:radial-gradient(circle at 82% 8%,rgba(102,230,162,.25),transparent 40%)}
 .price-card.package8{border-color:rgba(102,230,162,.28)}
 .price-card.package8 .price-label{color:#b7f4cf}
-.price-card.package8 .package-count{letter-spacing:-.05em}
-.price-card.package8 .package-count small{font-size:13px}
 .price-card.package8 .package-link{color:#8ff0b8}
+.monthly-link{color:#f6a6d3}
+.buy-placeholder{
+  border:0;background:none;padding:0;cursor:default;
+  font-family:inherit
+}
 .price-card>*{position:relative;z-index:2}
 .price-label{font-size:9px;font-weight:950;letter-spacing:.13em;color:#c3cbd5}
 .price{margin-top:40px;font-size:64px;font-weight:1000;letter-spacing:-.06em}
@@ -259,7 +262,6 @@ footer{
   .schedule-day-grid{grid-template-columns:1fr 1fr}
   .pricing{grid-template-columns:1fr}
   .pricing-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .price-card.package8{grid-column:1/-1}
   .studio{grid-template-columns:1fr}
 }
 @media(max-width:760px){
