@@ -60,16 +60,15 @@
       <p>Weekdays at <strong>05:30, 08:00, 18:00 and 19:00</strong>. Saturday at <strong>07:00 and 08:00</strong>. Choose an available class below.</p>
     </div>
 
-    <div class="booklink-live">
-      <iframe
-        src="https://bklnk.co.za/spinningkartel"
-        title="Spinning Kartel live class bookings"
-        loading="eager"
-        allow="payment *"
-      ></iframe>
+    <div id="quickSchedule" class="quick-schedule">
+      <div class="schedule-loading">Loading upcoming classes…</div>
     </div>
 
-    <p class="booking-fallback">Having trouble with the booking window? <a href="https://bklnk.co.za/spinningkartel" target="_blank" rel="noopener">OPEN BOOKINGS IN A NEW WINDOW →</a></p>
+    <div class="schedule-actions">
+      <button id="toggleFullSchedule" class="button outline" type="button">VIEW FULL SCHEDULE</button>
+    </div>
+
+    <div id="fullSchedule" class="full-schedule" hidden></div>
   </section>
 
   <section class="pricing" id="pricing">
@@ -200,6 +199,7 @@
   </div>
 </footer>
 
-
+<script src="config.js"></script>
+<script src="public.js"></script>
 </body>
 </html>
