@@ -370,7 +370,7 @@ async function handler(req, res) {
         rec.count += 1;
         if (rec.count >= 5) { rec.until = Date.now() + 15*60*1000; rec.count = 0; }
         loginAttempts.set(ip, rec);
-        return json(res, 401, {error:'invalid_code'}, origin);
+        return json(res, 401, {error:'invalid_password'}, origin);
       }
       loginAttempts.delete(ip);
       const payload = {role:'admin',email:'admin',exp:Date.now()+30*24*60*60*1000};
