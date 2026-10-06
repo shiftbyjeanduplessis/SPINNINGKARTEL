@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 
 const PORT = Number(process.env.PORT || 10000);
 const DATABASE_URL = process.env.DATABASE_URL;
-const ADMIN_CODE = String(process.env.ADMIN_CODE || '');
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || process.env.ADMIN_CODE || '');
 const SESSION_SECRET = String(process.env.SESSION_SECRET || '');
 const BOOKLINK_WEBHOOK_SECRET = String(process.env.BOOKLINK_WEBHOOK_SECRET || '');
 const BOOKLINK_SERVICE_ID = String(process.env.BOOKLINK_SERVICE_ID || '');
@@ -15,7 +15,7 @@ const ALLOWED_ORIGINS = new Set(
 );
 
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
-if (!ADMIN_CODE) throw new Error('ADMIN_CODE is required');
+if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD is required');
 if (!SESSION_SECRET) throw new Error('SESSION_SECRET is required');
 
 const pool = new Pool({ connectionString: DATABASE_URL, max: 5 });
@@ -366,14 +366,14 @@ async function handler(req, res) {
       const rec = loginAttempts.get(ip) || {count:0,until:0};
       if (rec.until > Date.now()) return json(res, 429, {error:'too_many_attempts'}, origin);
       const body = await readJson(req);
-      if (!safeEqual(String(body.code || ''), ADMIN_CODE)) {
+      if (!safeEqual(String(body.password || ''), ADMIN_PASSWORD)) {
         rec.count += 1;
         if (rec.count >= 5) { rec.until = Date.now() + 15*60*1000; rec.count = 0; }
         loginAttempts.set(ip, rec);
         return json(res, 401, {error:'invalid_code'}, origin);
       }
       loginAttempts.delete(ip);
-      const payload = {role:'admin',email:String(body.email || 'staff'),exp:Date.now()+12*60*60*1000};
+      const payload = {role:'admin',email:'admin',exp:Date.now()+30*24*60*60*1000};
       return json(res, 200, {token:signToken(payload),expires_at:payload.exp}, origin);
     }
 
