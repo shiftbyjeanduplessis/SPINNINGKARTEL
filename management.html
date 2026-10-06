@@ -4,11 +4,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111111">
 <meta name="robots" content="noindex,nofollow">
+<style>body.admin-auth-locked{visibility:hidden}</style>
 <script>if(!localStorage.getItem("sk_admin_token")){location.replace("login.html");}</script>
 <title>Spinning Kartel | Management</title>
 <link rel="stylesheet" href="admin.css">
 </head>
-<body>
+<body class="admin-auth-locked">
 <header class="admin-topbar">
   <a class="brand invert" href="index.html"><img class="brand-logo" src="logo.webp" alt="Spinning Kartel"><span><strong>SPINNING KARTEL</strong><small>Management</small></span></a>
   <div class="top-actions">
