@@ -590,18 +590,7 @@ async function rebuildBooklinkSessionCounts() {
   }));
 }
 
-async function logWebhookEventTypes() {
-  const q = await pool.query(`
-    SELECT event_type, COUNT(*)::int AS count
-    FROM sk_webhook_events
-    WHERE received_at >= now() - interval '30 days'
-    GROUP BY event_type
-    ORDER BY event_type
-  `);
-  console.log('BOOKLINK_EVENT_TYPES ' + JSON.stringify(q.rows));
-}
-
 const server = http.createServer(handler);
-Promise.all([rebuildBooklinkSessionCounts(),logWebhookEventTypes()])
-  .catch(e => console.error('BOOKLINK_STARTUP_DIAGNOSTIC_ERROR', e))
+rebuildBooklinkSessionCounts()
+  .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
