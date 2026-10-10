@@ -590,7 +590,29 @@ async function rebuildBooklinkSessionCounts() {
   }));
 }
 
+async function logWebhookShapeSummary() {
+  const types = await pool.query(`
+    SELECT event_type,COUNT(*)::int AS count
+    FROM sk_webhook_events
+    GROUP BY event_type
+    ORDER BY event_type
+  `);
+  console.log('BOOKLINK_WEBHOOK_TYPES ' + JSON.stringify(types.rows));
+
+  const samples = await pool.query(`
+    SELECT DISTINCT ON (event_type)
+      event_type,
+      ARRAY(SELECT jsonb_object_keys(COALESCE(payload->'data','{}'::jsonb))) AS data_keys
+    FROM sk_webhook_events
+    ORDER BY event_type,received_at DESC
+  `);
+  console.log('BOOKLINK_WEBHOOK_DATA_KEYS ' + JSON.stringify(samples.rows));
+}
+
 const server = http.createServer(handler);
-rebuildBooklinkSessionCounts()
-  .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
+Promise.all([
+  rebuildBooklinkSessionCounts(),
+  logWebhookShapeSummary()
+])
+  .catch(e => console.error('BOOKLINK_STARTUP_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
