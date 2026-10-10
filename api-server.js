@@ -312,7 +312,9 @@ async function handleBooklink(req, res, origin) {
         'booking.confirmed',
         'booking.cancelled',
         'booking.rescheduled',
-        'booking.completed'
+        'booking.completed',
+        'enrollment.created',
+        'enrollment.cancelled'
       ]);
       if (bookingEvents.has(eventType)) {
         await rebuildBooklinkSessionCounts();
@@ -354,7 +356,11 @@ async function handler(req, res) {
 
     if (req.method === 'GET' && path === '/api/public/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
-      return json(res, 200, {classes: await classRows(days, u.searchParams.get('from') || undefined)}, origin);
+      const syncQ = await pool.query("SELECT EXISTS(SELECT 1 FROM sk_webhook_events WHERE event_type='enrollment.created') AS ok");
+      return json(res, 200, {
+        classes: await classRows(days, u.searchParams.get('from') || undefined),
+        sync_reliable: Boolean(syncQ.rows[0]?.ok)
+      }, origin);
     }
 
     if (req.method === 'POST' && path === '/webhooks/booklink') {
@@ -373,7 +379,7 @@ async function handler(req, res) {
         return json(res, 401, {error:'invalid_password'}, origin);
       }
       loginAttempts.delete(ip);
-      const payload = {role:'admin',email:'admin',exp:Date.now()+30*24*60*60*1000};
+      const payload = {role:'admin',email:'admin',exp:Date.now()+365*24*60*60*1000};
       return json(res, 200, {token:signToken(payload),expires_at:payload.exp}, origin);
     }
 
@@ -523,8 +529,17 @@ async function handler(req, res) {
     }
 
     if (req.method === 'GET' && path === '/api/admin/webhooks') {
-      const q=await pool.query("SELECT id,event_id,event_type,received_at,processed,process_note FROM sk_webhook_events ORDER BY id DESC LIMIT 50");
-      return json(res,200,{events:q.rows,configured:Boolean(BOOKLINK_WEBHOOK_SECRET)},origin);
+      const [q,t] = await Promise.all([
+        pool.query("SELECT id,event_id,event_type,received_at,processed,process_note FROM sk_webhook_events ORDER BY id DESC LIMIT 50"),
+        pool.query("SELECT event_type,COUNT(*)::int AS count,MAX(received_at) AS latest FROM sk_webhook_events GROUP BY event_type ORDER BY event_type")
+      ]);
+      const eventTypes=t.rows.map(r=>r.event_type);
+      return json(res,200,{
+        events:q.rows,
+        configured:Boolean(BOOKLINK_WEBHOOK_SECRET),
+        event_types:eventTypes,
+        booking_sync_reliable:eventTypes.includes('enrollment.created')
+      },origin);
     }
 
     return json(res, 404, {error:'not_found'}, origin);
@@ -535,35 +550,75 @@ async function handler(req, res) {
 }
 
 async function rebuildBooklinkSessionCounts() {
-  if (!BOOKLINK_SERVICE_ID) {
-    console.warn('BOOKLINK_SERVICE_ID missing; skipping booking count rebuild');
-    return;
-  }
-
   const q = await pool.query(`
     SELECT id,event_type,received_at,payload,
            COALESCE(NULLIF(payload->>'created','')::timestamptz,received_at) AS event_created
     FROM sk_webhook_events
-    WHERE event_type IN ('booking.created','booking.confirmed','booking.cancelled','booking.rescheduled','booking.completed')
-      AND payload->'data'->>'service_id'=$1
+    WHERE event_type IN (
+      'booking.created','booking.confirmed','booking.cancelled','booking.rescheduled','booking.completed',
+      'enrollment.created','enrollment.cancelled'
+    )
     ORDER BY COALESCE(NULLIF(payload->>'created','')::timestamptz,received_at) ASC,id ASC
-  `, [BOOKLINK_SERVICE_ID]);
+  `);
 
-  const latestByBooking = new Map();
+  const latestBookings = new Map();
+  const latestEnrollments = new Map();
+
+  function bookingId(data) {
+    return String(data?.booking_id || data?.booking?.id || data?.id || '');
+  }
+  function linkedBookingId(data) {
+    return String(data?.booking_id || data?.booking?.id || data?.bookingId || '');
+  }
+  function enrollmentId(data) {
+    const direct=String(data?.enrollment_id || data?.id || '');
+    if(direct) return direct;
+    const sid=String(data?.session_id || data?.session?.id || '');
+    const cid=String(data?.client_id || data?.client?.id || data?.customer_id || '');
+    const bid=linkedBookingId(data);
+    return [sid,cid,bid].filter(Boolean).join('|');
+  }
+
   for (const row of q.rows) {
-    const data = row.payload?.data || {};
-    const bookingId = String(data.id || '');
-    if (!bookingId) continue;
-    latestByBooking.set(bookingId, {eventType:row.event_type,data});
+    const data = row.payload?.data;
+    if (!data || typeof data !== 'object' || !isSpinningBooking(data)) continue;
+
+    if (row.event_type.startsWith('booking.')) {
+      const id=bookingId(data);
+      if(id) latestBookings.set(id,{eventType:row.event_type,data});
+    } else if (row.event_type.startsWith('enrollment.')) {
+      const id=enrollmentId(data);
+      if(id) latestEnrollments.set(id,{eventType:row.event_type,data});
+    }
+  }
+
+  const cancelledByEnrollment=new Set();
+  for(const evt of latestEnrollments.values()){
+    if(evt.eventType!=='enrollment.cancelled') continue;
+    const bid=linkedBookingId(evt.data);
+    if(bid) cancelledByEnrollment.add(bid);
   }
 
   const counts = new Map();
-  for (const evt of latestByBooking.values()) {
-    if (evt.eventType === 'booking.cancelled') continue;
+  const activeBookingIds=new Set();
+
+  for (const [id,evt] of latestBookings.entries()) {
+    if (evt.eventType === 'booking.cancelled' || cancelledByEnrollment.has(id)) continue;
     const dt = eventDateTime(evt.data);
     if (!dt) continue;
     const key = dt.date + '|' + dt.time;
     counts.set(key, (counts.get(key) || 0) + seatCount(evt.data));
+    activeBookingIds.add(id);
+  }
+
+  for (const evt of latestEnrollments.values()) {
+    if (evt.eventType !== 'enrollment.created') continue;
+    const linked=linkedBookingId(evt.data);
+    if(linked && activeBookingIds.has(linked)) continue;
+    const dt=eventDateTime(evt.data);
+    if(!dt) continue;
+    const key=dt.date+'|'+dt.time;
+    counts.set(key,(counts.get(key)||0)+seatCount(evt.data));
   }
 
   await pool.query(`
@@ -585,34 +640,13 @@ async function rebuildBooklinkSessionCounts() {
   }
 
   console.log('BOOKLINK_COUNTS_REBUILT ' + JSON.stringify({
-    bookings:latestByBooking.size,
+    bookings:latestBookings.size,
+    enrollments:latestEnrollments.size,
     sessions:[...counts.entries()].map(([key,booked])=>({key,booked}))
   }));
 }
 
-async function logWebhookShapeSummary() {
-  const types = await pool.query(`
-    SELECT event_type,COUNT(*)::int AS count
-    FROM sk_webhook_events
-    GROUP BY event_type
-    ORDER BY event_type
-  `);
-  console.log('BOOKLINK_WEBHOOK_TYPES ' + JSON.stringify(types.rows));
-
-  const samples = await pool.query(`
-    SELECT DISTINCT ON (event_type)
-      event_type,
-      ARRAY(SELECT jsonb_object_keys(COALESCE(payload->'data','{}'::jsonb))) AS data_keys
-    FROM sk_webhook_events
-    ORDER BY event_type,received_at DESC
-  `);
-  console.log('BOOKLINK_WEBHOOK_DATA_KEYS ' + JSON.stringify(samples.rows));
-}
-
 const server = http.createServer(handler);
-Promise.all([
-  rebuildBooklinkSessionCounts(),
-  logWebhookShapeSummary()
-])
-  .catch(e => console.error('BOOKLINK_STARTUP_ERROR', e))
+rebuildBooklinkSessionCounts()
+  .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
