@@ -4,7 +4,7 @@ const TOKEN=localStorage.getItem("sk_admin_token");
 if(!TOKEN) location.replace("login.html");
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false};
+let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
@@ -42,14 +42,14 @@ function classStatus(c){
 function renderToday(){
   const rows=state.classes.filter(c=>c.date===today());
   $("#metricClasses").textContent=rows.length;
-  $("#metricBookings").textContent=rows.reduce((s,c)=>s+Number(c.booked||0),0);
+  $("#metricBookings").textContent=state.bookingSyncReliable?rows.reduce((s,c)=>s+Number(c.booked||0),0):"—";
   $("#metricUnassigned").textContent=rows.filter(c=>!c.instructor_id).length;
   $("#metricMembershipActions").textContent=state.memberships.filter(m=>m.payment_status==="failed"||m.payment_status==="cancelled"||(m.payment_status==="paid"&&m.booklink_package_status!=="active")).length;
   $("#todayClasses").innerHTML=rows.length?rows.map(c=>'<article class="ops-row">'+
     '<div class="ops-time"><strong>'+c.time+'</strong><span>'+dateLabel(c.date)+'</span></div>'+
     '<div><strong>Spinning Class</strong><span>'+esc(c.instructor)+'</span></div>'+
-    '<div><strong>'+c.booked+' / '+c.capacity+'</strong><span>Booked seats</span></div>'+
-    '<div>'+classStatus(c)+'</div>'+
+    '<div><strong>'+(state.bookingSyncReliable?(c.booked+' / '+c.capacity):'CHECK BOOKLINK')+'</strong><span>'+(state.bookingSyncReliable?'Booked seats':'Class roster')+'</span></div>'+
+    '<div>'+(state.bookingSyncReliable?classStatus(c):'<span class="badge warning">SYNC INCOMPLETE</span>')+'</div>'+
     '<a class="mini primary" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">ROSTER ↗</a>'+
   '</article>').join(""):'<p class="muted">No classes scheduled today.</p>';
 }
@@ -164,11 +164,16 @@ function renderInstructors(){
 
 function renderWebhooks(){
   $("#webhookUrl").textContent=API+"/webhooks/booklink";
-  $("#webhookStatus").innerHTML=state.webhookConfigured
-    ? '<strong class="ok-text">Signing secret configured.</strong> Send a Booklink test ping.'
-    : '<strong class="warn-text">Signing secret still needs to be added to the API service.</strong>';
+  if(!state.webhookConfigured){
+    $("#webhookStatus").innerHTML='<strong class="warn-text">Signing secret is not configured.</strong>';
+  }else if(!state.bookingSyncReliable){
+    $("#webhookStatus").innerHTML='<strong class="warn-text">Class sync incomplete.</strong> Booklink has not sent enrollment.created events yet. Enable enrollment.created and enrollment.cancelled on this webhook.';
+  }else{
+    $("#webhookStatus").innerHTML='<strong class="ok-text">Class enrollment sync active.</strong>';
+  }
   $("#webhookEvents").innerHTML=state.events.length?state.events.map(e=>'<div class="event-row"><strong>'+esc(e.event_type)+'</strong><span>'+new Date(e.received_at).toLocaleString("en-ZA")+'</span><span>'+esc(e.process_note||"logged")+'</span></div>').join(""):'<p class="muted">No webhook deliveries received yet.</p>';
-  $("#syncLabel").textContent=state.webhookConfigured?"Booklink: webhook ready":"Booklink: webhook setup pending";
+  $("#syncLabel").textContent=!state.webhookConfigured?"Booklink: setup pending":state.bookingSyncReliable?"Booklink: class sync active":"Booklink: class sync incomplete";
+  renderToday();
 }
 
 async function refreshClasses(){
@@ -198,7 +203,7 @@ async function refreshAttendancePay(){
 
 async function refreshWebhooks(){
   const w=await api("/api/admin/webhooks");
-  state.events=w.events||[];state.webhookConfigured=Boolean(w.configured);renderWebhooks();
+  state.events=w.events||[];state.webhookConfigured=Boolean(w.configured);state.eventTypes=w.event_types||[];state.bookingSyncReliable=Boolean(w.booking_sync_reliable);renderWebhooks();
 }
 
 $("#instructorForm").onsubmit=async e=>{
