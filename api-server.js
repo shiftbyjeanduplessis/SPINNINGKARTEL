@@ -646,59 +646,7 @@ async function rebuildBooklinkSessionCounts() {
   }));
 }
 
-async function logSafeWebhookFields() {
-  const top = await pool.query(`
-    SELECT event_type,array_agg(DISTINCT k ORDER BY k) AS keys
-    FROM sk_webhook_events e
-    CROSS JOIN LATERAL jsonb_object_keys(e.payload->'data') AS k
-    WHERE jsonb_typeof(e.payload->'data')='object'
-      AND e.event_type IN ('booking.confirmed','booking.cancelled','booking.rescheduled')
-    GROUP BY event_type ORDER BY event_type
-  `);
-  console.log('BOOKLINK_SAFE_DATA_KEYS '+JSON.stringify(top.rows));
-
-  const session = await pool.query(`
-    SELECT array_agg(DISTINCT k ORDER BY k) AS keys
-    FROM sk_webhook_events e
-    CROSS JOIN LATERAL jsonb_object_keys(e.payload->'data'->'session') AS k
-    WHERE jsonb_typeof(e.payload->'data'->'session')='object'
-  `);
-  console.log('BOOKLINK_SAFE_SESSION_KEYS '+JSON.stringify(session.rows));
-
-  const sample = await pool.query(`
-    SELECT event_type,
-      payload->'data'->>'seats' AS seats,
-      payload->'data'->>'seat_count' AS seat_count,
-      payload->'data'->>'quantity' AS quantity,
-      payload->'data'->>'capacity' AS capacity,
-      payload->'data'->>'booked_count' AS booked_count,
-      payload->'data'->'session'->>'capacity' AS session_capacity,
-      payload->'data'->'session'->>'booked_count' AS session_booked_count,
-      payload->'data'->'session'->>'spots_remaining' AS session_spots_remaining,
-      payload->'data'->'session'->>'remaining' AS session_remaining
-    FROM sk_webhook_events
-    WHERE event_type='booking.confirmed'
-    ORDER BY received_at DESC LIMIT 5
-  `);
-  console.log('BOOKLINK_SAFE_COUNT_FIELDS '+JSON.stringify(sample.rows));
-
-  const todaySessions = await pool.query(`
-    SELECT
-      payload->'data'->>'session_id' AS session_id,
-      LEFT(payload->'data'->>'start_time',16) AS start_time,
-      event_type,
-      COUNT(*)::int AS events,
-      COALESCE(SUM(NULLIF(payload->'data'->>'seat_count','')::int),0)::int AS seats
-    FROM sk_webhook_events
-    WHERE payload->'data'->>'start_time' LIKE '2026-10-10%'
-      AND event_type IN ('booking.confirmed','booking.cancelled','booking.rescheduled')
-    GROUP BY 1,2,3
-    ORDER BY 2,1,3
-  `);
-  console.log('BOOKLINK_TODAY_SESSION_GROUPS '+JSON.stringify(todaySessions.rows));
-}
-
 const server = http.createServer(handler);
-Promise.all([rebuildBooklinkSessionCounts(),logSafeWebhookFields()])
-  .catch(e => console.error('BOOKLINK_STARTUP_ERROR', e))
+rebuildBooklinkSessionCounts()
+  .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
