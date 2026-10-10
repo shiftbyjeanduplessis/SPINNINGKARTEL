@@ -41,7 +41,7 @@ function quickCard(c){
     '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
     '<p>'+esc(rideName(c.time))+' · 45 min · R70</p>'+
-    (c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    (BOOKING_SYNC_RELIABLE&&c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fullCard(c){
@@ -51,7 +51,7 @@ function fullCard(c){
     '<div class="time">'+esc(c.time)+'</div>'+
     '<div class="desc"><strong>'+esc(rideName(c.time))+'</strong><span>45 min · R70</span></div>'+
     '<div class="book">'+statusText+'</div>'+
-    (c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    (BOOKING_SYNC_RELIABLE&&c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fallback(){
@@ -88,10 +88,6 @@ async function bootSchedule(){
     BOOKING_SYNC_RELIABLE=Boolean(data.sync_reliable);
     rows=data.classes||[];
   }catch(e){rows=fallback()}
-  const currentSoldOutUntil=new Date("2026-10-05T18:45:00+02:00").getTime();
-  if(Date.now()<currentSoldOutUntil){
-    rows=rows.map(c=>(c.date==="2026-10-05"&&c.time==="18:00")?{...c,status:"full",booked:12,capacity:12}:c);
-  }
   rows=rows.filter(futureClass);
   const quick=$("#quickSchedule");
   if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||'<div class="schedule-loading">No upcoming classes found.</div>';
