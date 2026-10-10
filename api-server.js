@@ -681,6 +681,21 @@ async function logSafeWebhookFields() {
     ORDER BY received_at DESC LIMIT 5
   `);
   console.log('BOOKLINK_SAFE_COUNT_FIELDS '+JSON.stringify(sample.rows));
+
+  const todaySessions = await pool.query(`
+    SELECT
+      payload->'data'->>'session_id' AS session_id,
+      LEFT(payload->'data'->>'start_time',16) AS start_time,
+      event_type,
+      COUNT(*)::int AS events,
+      COALESCE(SUM(NULLIF(payload->'data'->>'seat_count','')::int),0)::int AS seats
+    FROM sk_webhook_events
+    WHERE payload->'data'->>'start_time' LIKE '2026-10-10%'
+      AND event_type IN ('booking.confirmed','booking.cancelled','booking.rescheduled')
+    GROUP BY 1,2,3
+    ORDER BY 2,1,3
+  `);
+  console.log('BOOKLINK_TODAY_SESSION_GROUPS '+JSON.stringify(todaySessions.rows));
 }
 
 const server = http.createServer(handler);
