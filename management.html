@@ -34,7 +34,7 @@
   <main class="admin-main">
     <section class="view active" data-page="today">
       <div class="page-head">
-        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. This screen shows the rota, live booked count and attendance work still to close.</p></div>
+        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. This screen shows studio operations; booking counts are only shown once the class-enrollment webhook is active.</p></div>
         <a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK</a>
       </div>
       <div class="metrics">
@@ -44,7 +44,7 @@
         <article><span>Membership actions</span><strong id="metricMembershipActions">0</strong></article>
       </div>
       <section class="panel">
-        <div class="panel-head"><div><p class="eyebrow">TODAY</p><h2>Class floor</h2></div><p>Booked seats sync from Booklink once the webhook is connected.</p></div>
+        <div class="panel-head"><div><p class="eyebrow">TODAY</p><h2>Class floor</h2></div><p>Booklink is the booking authority. Use the roster link whenever class sync is marked incomplete.</p></div>
         <div id="todayClasses" class="ops-list"></div>
       </section>
     </section>
@@ -100,7 +100,7 @@
           <strong>Webhook endpoint</strong>
           <code id="webhookUrl">Loading…</code>
           <span id="webhookStatus">Checking configuration…</span>
-          <span>In Booklink subscribe to: <strong>booking.confirmed</strong>, <strong>booking.cancelled</strong> and <strong>booking.rescheduled</strong>.</span>
+          <span>In Booklink subscribe this endpoint to all seven events: <strong>booking.created</strong>, <strong>booking.confirmed</strong>, <strong>booking.rescheduled</strong>, <strong>booking.cancelled</strong>, <strong>booking.completed</strong>, <strong>enrollment.created</strong> and <strong>enrollment.cancelled</strong>. The two enrollment events are essential for group-class counts.</span>
           <a class="button secondary" href="https://app.booklink.co.za/settings/webhooks" target="_blank" rel="noreferrer">OPEN BOOKLINK WEBHOOKS</a>
         </div>
       </section>
