@@ -3,6 +3,7 @@ const API=cfg.apiBaseUrl||"";
 const BOOKING_URL=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
 const OPEN_FROM="2026-10-05T18:00:00+02:00";
 const $=s=>document.querySelector(s);
+let BOOKING_SYNC_RELIABLE=false;
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function futureClass(c){
@@ -25,6 +26,7 @@ function rideName(time){
   return"Spinning Class";
 }
 function status(c){
+  if(!BOOKING_SYNC_RELIABLE)return{label:"BOOK",cls:""};
   if(c.status==="full")return{label:"FULL",cls:"full"};
   if(c.status==="almost_full"){
     const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
@@ -82,7 +84,9 @@ async function bootSchedule(){
   try{
     const r=await fetch(API+"/api/public/classes?days=14&from="+encodeURIComponent(scheduleStartDate()),{cache:"no-store"});
     if(!r.ok)throw new Error("api");
-    rows=(await r.json()).classes||[];
+    const data=await r.json();
+    BOOKING_SYNC_RELIABLE=Boolean(data.sync_reliable);
+    rows=data.classes||[];
   }catch(e){rows=fallback()}
   const currentSoldOutUntil=new Date("2026-10-05T18:45:00+02:00").getTime();
   if(Date.now()<currentSoldOutUntil){
