@@ -48,7 +48,7 @@ function renderToday(){
     $("#todayClasses").innerHTML=
       '<div class="integration-note">'+
         '<strong>Booklink is the live booking source</strong>'+
-        '<span>Class roster sync is not complete yet, so this dashboard is deliberately not showing booking counts or availability.</span>'+
+        '<span>Live booking sync has not yet received a confirmed Booklink booking, so counts are temporarily unavailable.</span>'+
         '<a class="button" href="https://app.booklink.co.za/calendar" target="_blank" rel="noreferrer">OPEN LIVE BOOKLINK CALENDAR ↗</a>'+
       '</div>';
     return;
@@ -181,12 +181,12 @@ function renderWebhooks(){
   if(!state.webhookConfigured){
     $("#webhookStatus").innerHTML='<strong class="warn-text">Signing secret is not configured.</strong>';
   }else if(!state.bookingSyncReliable){
-    $("#webhookStatus").innerHTML='<strong class="warn-text">Class sync incomplete.</strong> Booklink has not sent enrollment.created events yet. Enable enrollment.created and enrollment.cancelled on this webhook.';
+    $("#webhookStatus").innerHTML='<strong class="warn-text">Class sync incomplete.</strong> No confirmed Booklink booking events have been received yet.';
   }else{
     $("#webhookStatus").innerHTML='<strong class="ok-text">Class enrollment sync active.</strong>';
   }
   $("#webhookEvents").innerHTML=state.events.length?state.events.map(e=>'<div class="event-row"><strong>'+esc(e.event_type)+'</strong><span>'+new Date(e.received_at).toLocaleString("en-ZA")+'</span><span>'+esc(e.process_note||"logged")+'</span></div>').join(""):'<p class="muted">No webhook deliveries received yet.</p>';
-  $("#syncLabel").textContent=!state.webhookConfigured?"Booklink: setup pending":state.bookingSyncReliable?"Booklink: class sync active":"Booklink: class sync incomplete";
+  $("#syncLabel").textContent=!state.webhookConfigured?"Booklink: setup pending":state.bookingSyncReliable?"Booklink: live sync active":"Booklink: live sync incomplete";
   renderToday();
 }
 
