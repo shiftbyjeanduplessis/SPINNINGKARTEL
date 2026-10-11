@@ -78,21 +78,35 @@ function renderRota(){
     const head=c.date!==lastDate?'<div class="rota-day">'+dateLabel(c.date)+'</div>':"";
     lastDate=c.date;
     return head+'<div class="rota-row">'+
-      '<div><strong>'+c.time+'</strong><span>45 min · '+c.booked+'/'+c.capacity+' booked</span></div>'+
-      '<select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select>'+
-      '<span class="rota-public">'+(c.instructor_id?'PUBLIC: '+esc(c.instructor):'PUBLIC: TBC')+'</span>'+
+      '<div class="rota-class"><strong>'+c.time+'</strong><span>Spinning Class · 45 min</span></div>'+
+      '<div class="rota-booking"><strong>'+c.booked+' / '+c.capacity+'</strong><span>Booked in Booklink</span></div>'+
+      '<div class="rota-status">'+classStatus(c)+'</div>'+
+      '<label class="rota-picker"><span>Instructor</span><select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select></label>'+
     '</div>';
   }).join("");
-}
 
-$("#saveRota").onclick=async()=>{
-  const assignments=$$(".rota-select").map(s=>({date:s.dataset.date,time:s.dataset.time,instructor_id:s.value||null}));
-  try{
-    await api("/api/admin/rota",{method:"POST",body:JSON.stringify({assignments})});
-    toast("Instructor rota saved.");
-    await refreshClasses();
-  }catch(e){toast(e.message);}
-};
+  $(".rota-select").forEach(select=>{
+    select.onchange=async()=>{
+      const chosen=select.value||null;
+      select.disabled=true;
+      try{
+        await api("/api/admin/rota",{
+          method:"POST",
+          body:JSON.stringify({assignments:[{
+            date:select.dataset.date,
+            time:select.dataset.time,
+            instructor_id:chosen
+          }]})
+        });
+        toast(chosen?"Instructor saved.":"Instructor set to TBC.");
+        await refreshClasses();
+      }catch(e){
+        select.disabled=false;
+        toast(e.message);
+      }
+    };
+  });
+}
 
 function attendanceMap(){return new Map(state.attendance.map(a=>[String(a.service_date).slice(0,10)+"|"+String(a.start_time).slice(0,5),a]));}
 
