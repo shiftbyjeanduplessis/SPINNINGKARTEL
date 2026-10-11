@@ -34,7 +34,7 @@
   <main class="admin-main">
     <section class="view active" data-page="today">
       <div class="page-head">
-        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. This screen shows studio operations; booking counts are only shown once the class-enrollment webhook is active.</p></div>
+        <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. Confirmed bookings, cancellations and reschedules feed the live class counts shown here and on the public site.</p></div>
         <a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK</a>
       </div>
       <div class="metrics">
@@ -100,7 +100,7 @@
           <strong>Webhook endpoint</strong>
           <code id="webhookUrl">Loading…</code>
           <span id="webhookStatus">Checking configuration…</span>
-          <span>In Booklink subscribe this endpoint to all seven events: <strong>booking.created</strong>, <strong>booking.confirmed</strong>, <strong>booking.rescheduled</strong>, <strong>booking.cancelled</strong>, <strong>booking.completed</strong>, <strong>enrollment.created</strong> and <strong>enrollment.cancelled</strong>. The two enrollment events are essential for group-class counts.</span>
+          <span>For Spinning Kartel class availability, the important Booklink events are <strong>booking.confirmed</strong>, <strong>booking.cancelled</strong> and <strong>booking.rescheduled</strong>. Enrollment events can remain enabled as well for future package/cohort flows.</span>
           <a class="button secondary" href="https://app.booklink.co.za/settings/webhooks" target="_blank" rel="noreferrer">OPEN BOOKLINK WEBHOOKS</a>
         </div>
       </section>
