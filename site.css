@@ -133,6 +133,23 @@ section{scroll-margin-top:82px}
   animation:almostFullPulse 1.9s ease-in-out infinite
 }
 .quick-card.warning::before{background:#ffd34d}
+.quick-card.full{
+  border-color:rgba(255,88,88,.48);
+  background:
+    radial-gradient(circle at 84% 22%,rgba(255,88,88,.15),transparent 34%),
+    #0a0d12;
+  box-shadow:0 0 0 1px rgba(255,88,88,.12),0 0 18px rgba(255,88,88,.12);
+  opacity:.86
+}
+.quick-card.full::before{background:#ff5b5b}
+.full-class.full{
+  border-color:rgba(255,88,88,.48);
+  background:
+    radial-gradient(circle at 88% 30%,rgba(255,88,88,.12),transparent 32%),
+    #0a0d12;
+  opacity:.86
+}
+.full-class.full .book{color:#ff756f}
 .full-class.warning{
   border-color:rgba(255,211,77,.55);
   background:
