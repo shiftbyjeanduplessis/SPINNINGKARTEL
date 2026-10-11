@@ -43,7 +43,7 @@ function status(c){
     const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
     return{label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
   }
-  return{label:"OPEN",cls:""};
+  return{label:"OPEN",cls:"open"};
 }
 function quickCard(c){
   const s=status(c);
