@@ -47,6 +47,16 @@ section{scroll-margin-top:82px}
 .header-whatsapp strong{font-size:10px;font-weight:1000;letter-spacing:.02em}
 .header-whatsapp:hover{background:#2ee070}
 
+.team-building-banner{
+  min-height:34px;padding:7px 16px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:#25D366;color:#fff;text-decoration:none;text-align:center;
+  font-size:9px;font-weight:900;letter-spacing:.08em;
+  border-bottom:1px solid rgba(255,255,255,.08)
+}
+.team-building-banner strong{font-weight:1000}
+.team-building-banner:hover{background:#2ee070}
+
 .button{
   min-height:44px;padding:0 20px;border-radius:999px;
   display:inline-flex;align-items:center;justify-content:center;
@@ -279,6 +289,7 @@ footer{
   .header-whatsapp{min-height:28px;padding:0 9px;font-size:7px;transform:none}
   .header-whatsapp strong{display:none}
   .site-header .header-actions>.button{min-height:36px;padding:0 11px;font-size:7px}
+  .team-building-banner{min-height:32px;padding:7px 10px;font-size:8px;letter-spacing:.05em;flex-wrap:wrap;gap:5px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
   .hero{min-height:560px}.hero-copy{width:100%;min-height:560px}.hero-image{min-height:560px;background-size:cover;background-position:center}
   .schedule-section,.pricing,.studio,.experience,.faq{padding-left:14px;padding-right:14px}
