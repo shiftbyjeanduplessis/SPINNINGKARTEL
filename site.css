@@ -333,7 +333,7 @@ footer{
   .team-building-banner{min-height:48px;padding:10px 12px;font-size:10px;line-height:1.25}
   .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}
   .header-actions{gap:7px}
-  .header-whatsapp{min-height:28px;padding:0 9px;font-size:7px;transform:none}
+  .header-whatsapp{min-height:30px;padding:0 10px;font-size:9px;transform:none}
   .header-whatsapp strong{display:none}
   .site-header .header-actions>.button{min-height:36px;padding:0 11px;font-size:7px}
   .team-building-banner{min-height:32px;padding:7px 10px;font-size:8px;letter-spacing:.05em;flex-wrap:wrap;gap:5px}
