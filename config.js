@@ -5,7 +5,7 @@ window.SPINNING_CONFIG = {
   dropInPrice: 70,
   weekdayTimes: ["05:30","08:00","18:00","19:00"],
   saturdayTimes: ["07:00","08:00"],
-  urgencyThreshold: 0.70,
+  urgencyThreshold: 0.75,
   onlineCutoffMinutes: 20,
   monthlyUnlimitedPrice: 600,
   monthlyUnlimitedCredits: 100,
