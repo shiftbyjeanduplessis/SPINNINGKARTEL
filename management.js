@@ -1,9 +1,8 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
 const TOKEN=localStorage.getItem("sk_admin_token");
-if(!TOKEN) location.replace("login.html");
 
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
 let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
@@ -264,19 +263,36 @@ $("#memberForm").onsubmit=async e=>{
 };
 
 async function boot(){
+  if(!TOKEN){
+    location.replace("login.html");
+    return;
+  }
+
   try{
+    const auth=await fetch(API+"/api/admin/session",{
+      headers:{"authorization":"Bearer "+TOKEN},
+      cache:"no-store"
+    });
+    if(!auth.ok){
+      localStorage.removeItem("sk_admin_token");
+      location.replace("login.html");
+      return;
+    }
+
     const health=await fetch(API+"/health",{cache:"no-store"});
     if(!health.ok) throw new Error("API offline");
+
     const [i,m]=await Promise.all([api("/api/admin/instructors"),api("/api/admin/memberships")]);
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
     await Promise.all([refreshClasses(),refreshAttendancePay(),refreshWebhooks()]);
     document.body.classList.remove("admin-auth-locked");
   }catch(e){
-    if(!localStorage.getItem("sk_admin_token")) return;
-    $("#syncLabel").textContent="Studio API offline";
-    document.body.classList.remove("admin-auth-locked");
-    toast("Studio API is not ready yet.");
+    // Security-first: never reveal the management interface unless authentication
+    // has been verified and the admin data has loaded successfully.
+    document.body.classList.add("admin-auth-locked");
+    if(e.message==="Session expired") return;
+    location.replace("login.html");
   }
 }
 boot();
