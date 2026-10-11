@@ -383,6 +383,12 @@ async function handler(req, res) {
       return json(res, 200, {token:signToken(payload),expires_at:payload.exp}, origin);
     }
 
+    if (req.method === 'GET' && path === '/api/admin/session') {
+      const admin = requireAdmin(req);
+      if (!admin) return json(res, 401, {ok:false,error:'unauthorized'}, origin);
+      return json(res, 200, {ok:true,role:admin.role,expires_at:admin.exp}, origin);
+    }
+
     const admin = requireAdmin(req);
     if (!admin) return json(res, 401, {error:'unauthorized'}, origin);
 
