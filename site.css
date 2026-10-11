@@ -123,6 +123,22 @@ section{scroll-margin-top:82px}
 .quick-card strong{display:block;margin-top:7px;font-size:30px;letter-spacing:-.05em}
 .quick-card p{margin:4px 0 0;color:#b9c1cc;font-size:10px}
 .quick-status{position:absolute;right:14px;top:16px;font-size:7px;font-weight:950;letter-spacing:.08em;color:var(--green)}
+.quick-status.open{color:var(--green)}
+.quick-card.open{
+  border-color:rgba(102,230,162,.42);
+  background:
+    radial-gradient(circle at 86% 18%,rgba(102,230,162,.12),transparent 34%),
+    #0a0d12;
+  box-shadow:0 0 0 1px rgba(102,230,162,.08),0 0 18px rgba(102,230,162,.08)
+}
+.quick-card.open::before{background:var(--green)}
+.full-class.open{
+  border-color:rgba(102,230,162,.38);
+  background:
+    radial-gradient(circle at 90% 28%,rgba(102,230,162,.10),transparent 30%),
+    #0a0d12
+}
+.full-class.open .book{color:var(--green)}
 .quick-status.warning{color:#ffe36e}
 .quick-status.full{
   color:#fff;
