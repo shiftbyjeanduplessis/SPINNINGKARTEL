@@ -12,7 +12,10 @@ function futureClass(c){
   return classTime>=openFrom && classTime>Date.now()-5*60*1000;
 }
 function scheduleStartDate(){
-  return "2026-10-05";
+  return new Intl.DateTimeFormat("en-CA",{
+    timeZone:"Africa/Johannesburg",
+    year:"numeric",month:"2-digit",day:"2-digit"
+  }).format(new Date());
 }
 function prettyDate(date){
   return new Date(date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
@@ -25,10 +28,18 @@ function rideName(time){
   if(time==="07:00")return"Saturday Ride";
   return"Spinning Class";
 }
+function liveState(c){
+  const capacity=Math.max(1,Number(c.capacity||12));
+  const booked=Math.max(0,Number(c.booked||0));
+  if(booked>=capacity)return"full";
+  if(booked/capacity>=0.75)return"almost_full";
+  return"open";
+}
 function status(c){
   if(!BOOKING_SYNC_RELIABLE)return{label:"BOOK",cls:""};
-  if(c.status==="full")return{label:"FULL",cls:"full"};
-  if(c.status==="almost_full"){
+  const state=liveState(c);
+  if(state==="full")return{label:"FULL",cls:"full"};
+  if(state==="almost_full"){
     const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
     return{label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
   }
@@ -41,7 +52,7 @@ function quickCard(c){
     '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
     '<p>'+esc(rideName(c.time))+' · 45 min · R70</p>'+
-    (BOOKING_SYNC_RELIABLE&&c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fullCard(c){
@@ -51,7 +62,7 @@ function fullCard(c){
     '<div class="time">'+esc(c.time)+'</div>'+
     '<div class="desc"><strong>'+esc(rideName(c.time))+'</strong><span>45 min · R70</span></div>'+
     '<div class="book">'+statusText+'</div>'+
-    (BOOKING_SYNC_RELIABLE&&c.status==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fallback(){
@@ -109,3 +120,6 @@ if(toggle){
   });
 }
 bootSchedule();
+setInterval(()=>{ if(!document.hidden) bootSchedule(); },30000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) bootSchedule(); });
+window.addEventListener("focus",()=>bootSchedule());
