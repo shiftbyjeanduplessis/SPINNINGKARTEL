@@ -2,24 +2,49 @@ const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
 const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
+const passwordInput=document.querySelector("#adminPassword");
 
-if(localStorage.getItem("sk_admin_token")) location.replace("management.html");
+async function validateSavedSession(){
+  const token=localStorage.getItem("sk_admin_token");
+  if(!token) return false;
+  try{
+    const r=await fetch(API+"/api/admin/session",{
+      headers:{"authorization":"Bearer "+token},
+      cache:"no-store"
+    });
+    if(!r.ok) throw new Error("invalid");
+    location.replace("management.html");
+    return true;
+  }catch(e){
+    localStorage.removeItem("sk_admin_token");
+    return false;
+  }
+}
 
 form.addEventListener("submit",async e=>{
   e.preventDefault();
   msg.textContent="Signing in…";
-  const password=document.querySelector("#adminPassword").value;
+  const password=passwordInput.value;
   try{
     const r=await fetch(API+"/api/admin/login",{
       method:"POST",
       headers:{"content-type":"application/json"},
-      body:JSON.stringify({password})
+      body:JSON.stringify({password}),
+      cache:"no-store"
     });
     const data=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(data.error==="too_many_attempts"?"Too many attempts. Try again in 15 minutes.":"Incorrect password.");
+    if(!r.ok) throw new Error(
+      data.error==="too_many_attempts"
+        ?"Too many attempts. Try again in 15 minutes."
+        :"Incorrect password."
+    );
     localStorage.setItem("sk_admin_token",data.token);
-    location.href="management.html";
+    passwordInput.value="";
+    location.replace("management.html");
   }catch(err){
     msg.textContent=err.message||"Could not sign in.";
+    passwordInput.select();
   }
 });
+
+validateSavedSession();
