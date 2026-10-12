@@ -61,13 +61,33 @@
 
     <section class="view" data-page="attendance">
       <div class="page-head">
-        <div><p class="eyebrow">ACTUAL ATTENDANCE</p><h1>Attendance & pay</h1><p class="muted">Close each class with the number who actually rode. Pay uses actual attendance, not bookings.</p></div>
+        <div><p class="eyebrow">WEEKLY PAYROLL</p><h1>Attendance & pay</h1><p class="muted">Close each class with actual riders. Payroll is calculated Monday to Sunday from actual attendance.</p></div>
       </div>
-      <div class="pay-rule"><span>R200 base / class</span><span>+ R10 per attendee above 5</span><span>Actual attendance only</span></div>
+
+      <div class="pay-rule">
+        <span>Tammy: R200 / class</span>
+        <span>Other instructors: R150 / class</span>
+        <span>+ R10 per attendee above 5</span>
+        <span>Actual attendance only</span>
+      </div>
+
+      <div class="pay-weekbar">
+        <button class="mini" id="payPrevWeek" type="button">← PREVIOUS WEEK</button>
+        <strong id="payWeekLabel">THIS WEEK</strong>
+        <button class="mini" id="payThisWeek" type="button">THIS WEEK</button>
+      </div>
+
+      <div id="payTotals" class="pay-totals"></div>
       <div id="paySummary" class="instructor-summary"></div>
+
       <section class="panel">
-        <div class="panel-head"><div><p class="eyebrow">LAST 7 DAYS</p><h2>Close classes</h2></div><p>Enter actual riders after the class. No-shows are calculated from the Booklink booked count.</p></div>
+        <div class="panel-head"><div><p class="eyebrow">SELECTED WEEK</p><h2>Close classes</h2></div><p>Enter actual riders after each class. No-shows are calculated from the booked count.</p></div>
         <div id="attendanceList" class="attendance-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">PAYROLL HISTORY</p><h2>Previous weeks</h2></div><p>Class pay, commission and total payroll are kept separately for every completed week.</p></div>
+        <div id="payHistory" class="pay-history"></div>
       </section>
     </section>
 
@@ -114,7 +134,7 @@
 <dialog id="instructorDialog"><form id="instructorForm" class="modal">
   <div class="modal-head"><div><p class="eyebrow">INSTRUCTOR</p><h2>Add instructor</h2></div><button type="button" class="close" data-close>×</button></div>
   <div class="two"><label>Name<input id="instructorName" required></label><label>Role<select id="instructorRole"><option value="main">Main instructor</option><option value="student">Student instructor</option><option value="guest">Guest instructor</option></select></label></div>
-  <div class="two"><label>Base pay (R)<input id="instructorBase" type="number" min="0" value="200" required></label><label>Commission / rider above 5 (R)<input id="instructorCommission" type="number" min="0" value="10" required></label></div>
+  <div class="modal-note"><strong>Fixed pay policy:</strong> Tammy earns R200 per class. All other instructors earn R150 per class. Commission is R10 per attendee above 5.</div>
   <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">ADD INSTRUCTOR</button></div>
 </form></dialog>
 
