@@ -138,3 +138,36 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 @media(max-width:560px){
   .rota-session .rota-picker{grid-template-columns:1fr}
 }
+
+.pay-weekbar{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;
+  margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff
+}
+.pay-weekbar>strong{text-align:center;font-size:12px;letter-spacing:.05em}
+.pay-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.pay-totals article{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.pay-totals span{display:block;font-size:9px;font-weight:900;color:var(--muted);letter-spacing:.08em}
+.pay-totals strong{display:block;margin-top:7px;font-size:28px;letter-spacing:-.04em}
+.pay-card{min-height:225px}
+.pay-breakdown{display:grid;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.pay-breakdown>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pay-breakdown span{margin:0}
+.pay-breakdown strong{font-size:14px}
+.pay-breakdown .pay-total-row{padding-top:7px;border-top:1px solid var(--line)}
+.pay-breakdown .pay-total-row strong{font-size:20px}
+.pay-rate-note{margin-top:10px!important;font-weight:800}
+.pay-history{display:grid;gap:8px}
+.pay-history-row{
+  width:100%;display:grid;grid-template-columns:1.6fr .7fr .7fr .7fr;gap:12px;align-items:center;
+  padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;cursor:pointer;color:#111
+}
+.pay-history-row:hover{border-color:#176bff}
+.pay-history-row>div{display:grid;gap:3px}
+.pay-history-row span{font-size:9px;color:var(--muted)}
+.pay-history-row strong{font-size:12px}
+.pay-history-row>div:last-child strong{font-size:16px}
+@media(max-width:760px){
+  .pay-weekbar{grid-template-columns:1fr 1fr}.pay-weekbar>strong{grid-column:1/-1;grid-row:1}
+  .pay-totals{grid-template-columns:1fr}
+  .pay-history-row{grid-template-columns:1fr 1fr}
+}
