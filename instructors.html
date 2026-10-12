@@ -5,27 +5,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#06070a">
   <meta name="robots" content="noindex,nofollow">
-  <title>Spinning Kartel | Instructor Schedule</title>
+  <style>body.instructor-auth-locked{visibility:hidden}</style>
+  <title>Spinning Kartel | Instructor Week</title>
   <link rel="stylesheet" href="instructors.css">
 </head>
-<body>
+<body class="instructor-auth-locked">
   <header class="topbar">
     <div class="brand">
       <img src="logo.webp" alt="Spinning Kartel">
       <div>
         <strong>SPINNING KARTEL</strong>
-        <small>INSTRUCTOR SCHEDULE · VIEW ONLY</small>
+        <small>INSTRUCTOR WEEK · PRIVATE</small>
       </div>
     </div>
-    <div class="live-pill"><i></i><span id="liveLabel">LIVE</span></div>
+    <div class="top-actions">
+      <div class="live-pill"><i></i><span id="liveLabel">LIVE</span></div>
+      <a class="top-link" href="management.html">Management</a>
+      <button class="top-link" id="logoutBtn" type="button">Log out</button>
+    </div>
   </header>
 
   <main>
     <section class="intro">
       <div>
-        <p class="eyebrow">CLASS FLOOR</p>
+        <p class="eyebrow">THIS WEEK</p>
         <h1>INSTRUCTOR<br>SCHEDULE</h1>
-        <p class="sub">Live booking numbers for upcoming classes. This page is view only.</p>
+        <p class="sub">Every class for the current week with the exact live booking count. View only — no customer details are shown.</p>
+        <p class="week-range" id="weekRange">—</p>
       </div>
       <div class="updated">
         <span>LAST UPDATED</span>
@@ -34,16 +40,16 @@
     </section>
 
     <section class="summary" aria-label="Schedule summary">
-      <article><span>Upcoming classes</span><strong id="classCount">0</strong></article>
+      <article><span>Classes this week</span><strong id="classCount">0</strong></article>
       <article><span>Booked seats</span><strong id="seatCount">0</strong></article>
       <article><span>Full / almost full</span><strong id="busyCount">0</strong></article>
     </section>
 
     <section id="schedule" class="schedule">
-      <div class="loading">Loading live schedule…</div>
+      <div class="loading">Loading live booking counts…</div>
     </section>
 
-    <p class="footer-note">Booking numbers refresh automatically. No customer details are shown here.</p>
+    <p class="footer-note">Booking counts refresh automatically every 10 seconds from the Spinning Kartel booking sync.</p>
   </main>
 
   <script src="config.js"></script>
