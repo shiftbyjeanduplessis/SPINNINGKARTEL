@@ -371,11 +371,18 @@ async function handler(req, res) {
 
     if (req.method === 'GET' && path === '/api/public/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
-      const syncQ = await pool.query("SELECT EXISTS(SELECT 1 FROM sk_webhook_events WHERE event_type='booking.confirmed') AS ok");
-      return json(res, 200, {
-        classes: await classRows(days, u.searchParams.get('from') || undefined),
-        sync_reliable: Boolean(syncQ.rows[0]?.ok)
-      }, origin);
+      const rows = await classRows(days, u.searchParams.get('from') || undefined);
+      const classes = rows.map(c => ({
+        id:c.id,
+        date:c.date,
+        time:c.time,
+        duration:c.duration,
+        capacity:c.capacity,
+        booked:c.booked,
+        status:c.status,
+        instructor:c.instructor
+      }));
+      return json(res, 200, {classes}, origin);
     }
 
     if (req.method === 'POST' && path === '/webhooks/booklink') {
