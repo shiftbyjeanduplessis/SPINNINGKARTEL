@@ -3,6 +3,9 @@ const API=cfg.apiBaseUrl||"";
 const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
 const passwordInput=document.querySelector("#adminPassword");
+const params=new URLSearchParams(location.search);
+const requestedNext=params.get("next");
+const NEXT=["management.html","instructors.html"].includes(requestedNext)?requestedNext:"management.html";
 
 async function validateSavedSession(){
   const token=localStorage.getItem("sk_admin_token");
@@ -13,7 +16,7 @@ async function validateSavedSession(){
       cache:"no-store"
     });
     if(!r.ok) throw new Error("invalid");
-    location.replace("management.html");
+    location.replace(NEXT);
     return true;
   }catch(e){
     localStorage.removeItem("sk_admin_token");
@@ -40,7 +43,7 @@ form.addEventListener("submit",async e=>{
     );
     localStorage.setItem("sk_admin_token",data.token);
     passwordInput.value="";
-    location.replace("management.html");
+    location.replace(NEXT);
   }catch(err){
     msg.textContent=err.message||"Could not sign in.";
     passwordInput.select();
