@@ -137,6 +137,44 @@ function statusFor(booked, capacity) {
   return 'open';
 }
 
+function defaultInstructorFor(weekday, time) {
+  const key = String(weekday) + '|' + String(time);
+  const map = {
+    '1|05:30': {name:'Tammy'},
+    '1|08:00': {name:'Tammy'},
+    '1|17:00': {name:'Conraad'},
+    '1|18:00': {name:'Tammy'},
+    '1|19:00': {name:'Tammy', note:'If booked'},
+
+    '2|05:30': {name:'Tammy'},
+    '2|08:00': {name:'Tammy'},
+    '2|17:00': {name:'Conraad'},
+    '2|18:00': {name:'Tammy'},
+    '2|19:00': {name:'Demi'},
+
+    '3|05:30': {name:'Tammy', note:'Team Build'},
+    '3|08:00': {name:'Tammy'},
+    '3|17:00': {name:'Elzet'},
+    '3|18:00': {name:'Conraad'},
+    '3|19:00': {name:'Robbie'},
+
+    '4|05:30': {name:'Demi'},
+    '4|08:00': {name:'Tammy'},
+    '4|17:00': {name:'Tammy', note:'Team Build'},
+    '4|18:00': {name:'Tammy', note:'Team Build'},
+    '4|19:00': {name:'Tammy', note:'Team Build'},
+
+    '5|05:30': {name:'Robbie'},
+    '5|08:00': {name:'Tammy'},
+    '5|17:00': {name:'Elzet'},
+    '5|18:00': {name:'Tammy'},
+
+    '6|07:00': {name:'Tammy'},
+    '6|08:00': {name:'Instructor TBC', note:'Based on bookings'}
+  };
+  return map[key] || {name:'Instructor TBC'};
+}
+
 async function classRows(days, startDate) {
   const from = startDate || todayZA();
   const dates = [];
@@ -146,7 +184,7 @@ async function classRows(days, startDate) {
   const [slotsQ, rotaQ, statsQ] = await Promise.all([
     pool.query("SELECT weekday,start_time::text,duration_minutes,capacity FROM sk_weekly_slots WHERE active=true ORDER BY weekday,start_time"),
     pool.query(`
-      SELECT r.service_date::text, r.start_time::text, r.instructor_id, i.name AS instructor_name
+      SELECT r.service_date::text, r.start_time::text, r.instructor_id, r.note, i.name AS instructor_name
       FROM sk_instructor_rota r
       LEFT JOIN sk_instructors i ON i.id=r.instructor_id
       WHERE r.service_date BETWEEN $1 AND $2
@@ -177,6 +215,7 @@ async function classRows(days, startDate) {
       const ss = stats.get(key);
       const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
       const booked = Number(ss?.booked_count ?? 0);
+      const def = defaultInstructorFor(wd, time);
       rows.push({
         id: date + '_' + time.replace(':',''),
         date,
@@ -187,7 +226,8 @@ async function classRows(days, startDate) {
         booked,
         status: statusFor(booked, capacity),
         instructor_id: rr?.instructor_id || null,
-        instructor: rr?.instructor_name || 'Instructor TBC'
+        instructor: rr?.instructor_name || def.name || 'Instructor TBC',
+        instructor_note: rr?.note || def.note || null
       });
     }
   }
