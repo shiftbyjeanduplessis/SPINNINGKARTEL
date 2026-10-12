@@ -23,10 +23,16 @@ function prettyDate(date){
 function rideName(time){
   if(time==="05:30")return"Early Ride";
   if(time==="08:00")return"Morning Ride";
+  if(time==="17:00")return"Afternoon Ride";
   if(time==="18:00")return"Evening Ride";
   if(time==="19:00")return"Night Ride";
   if(time==="07:00")return"Saturday Ride";
   return"Spinning Class";
+}
+function instructorLine(c){
+  const name=esc(c.instructor||"Instructor TBC");
+  const note=c.instructor_note?' <span class="instructor-note">· '+esc(c.instructor_note)+'</span>':'';
+  return '<span class="instructor-name">WITH '+name.toUpperCase()+'</span>'+note;
 }
 function liveState(c){
   const capacity=Math.max(1,Number(c.capacity||12));
@@ -51,7 +57,8 @@ function quickCard(c){
     '<span class="quick-status '+s.cls+'">'+s.label+'</span>'+
     '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
-    '<p>'+esc(rideName(c.time))+' · 45 min · R70</p>'+
+    '<p class="class-meta">'+esc(rideName(c.time))+' · 45 min · R70</p>'+
+    '<p class="class-instructor">'+instructorLine(c)+'</p>'+
     (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
@@ -60,7 +67,7 @@ function fullCard(c){
   const statusText=s.label==="OPEN"?"BOOK":s.label;
   return '<article class="full-class '+s.cls+'">'+
     '<div class="time">'+esc(c.time)+'</div>'+
-    '<div class="desc"><strong>'+esc(rideName(c.time))+'</strong><span>45 min · R70</span></div>'+
+    '<div class="desc"><strong>'+esc(c.instructor||"Instructor TBC")+'</strong><span>'+esc(rideName(c.time))+' · 45 min · R70'+(c.instructor_note?' · '+esc(c.instructor_note):'')+'</span></div>'+
     '<div class="book">'+statusText+'</div>'+
     (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
@@ -71,8 +78,11 @@ function fallback(){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const dow=d.getDay();
     const date=d.toISOString().slice(0,10);
-    const times=dow===6?(cfg.saturdayTimes||["07:00","08:00"]):(dow>=1&&dow<=5?(cfg.weekdayTimes||["05:30","08:00","18:00","19:00"]):[]);
-    times.forEach(time=>rows.push({date,time,status:"open"}));
+    let times=[];
+    if(dow===6)times=cfg.saturdayTimes||["07:00","08:00"];
+    else if(dow>=1&&dow<=4)times=cfg.weekdayTimes||["05:30","08:00","17:00","18:00","19:00"];
+    else if(dow===5)times=cfg.fridayTimes||["05:30","08:00","17:00","18:00"];
+    times.forEach(time=>rows.push({date,time,status:"open",instructor:"Instructor TBC"}));
   }
   return rows.filter(futureClass);
 }
