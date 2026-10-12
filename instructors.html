@@ -5,23 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#06070a">
   <meta name="robots" content="noindex,nofollow">
-  <style>body.instructor-auth-locked{visibility:hidden}</style>
-  <title>Spinning Kartel | Instructor Week</title>
+  <title>Spinning Kartel | Instructor Schedule</title>
   <link rel="stylesheet" href="instructors.css">
 </head>
-<body class="instructor-auth-locked">
+<body>
   <header class="topbar">
     <div class="brand">
       <img src="logo.webp" alt="Spinning Kartel">
       <div>
         <strong>SPINNING KARTEL</strong>
-        <small>INSTRUCTOR WEEK · PRIVATE</small>
+        <small>INSTRUCTOR SCHEDULE · VIEW ONLY</small>
       </div>
     </div>
     <div class="top-actions">
       <div class="live-pill"><i></i><span id="liveLabel">LIVE</span></div>
-      <a class="top-link" href="management.html">Management</a>
-      <button class="top-link" id="logoutBtn" type="button">Log out</button>
     </div>
   </header>
 
@@ -30,7 +27,7 @@
       <div>
         <p class="eyebrow">THIS WEEK</p>
         <h1>INSTRUCTOR<br>SCHEDULE</h1>
-        <p class="sub">Every class for the current week with the exact live booking count. View only — no customer details are shown.</p>
+        <p class="sub">View-only weekly schedule showing class times, assigned instructors and current booking counts. No customer, payment or management information is available here.</p>
         <p class="week-range" id="weekRange">—</p>
       </div>
       <div class="updated">
@@ -46,10 +43,10 @@
     </section>
 
     <section id="schedule" class="schedule">
-      <div class="loading">Loading live booking counts…</div>
+      <div class="loading">Loading schedule…</div>
     </section>
 
-    <p class="footer-note">Booking counts refresh automatically every 10 seconds from the Spinning Kartel booking sync.</p>
+    <p class="footer-note">View only. Booking counts refresh automatically.</p>
   </main>
 
   <script src="config.js"></script>
