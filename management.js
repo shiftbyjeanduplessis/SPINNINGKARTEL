@@ -72,19 +72,29 @@ function instructorOptions(selected){
 }
 
 function renderRota(){
-  let lastDate="";
-  $("#rotaList").innerHTML=state.classes.map(c=>{
-    const head=c.date!==lastDate?'<div class="rota-day">'+dateLabel(c.date)+'</div>':"";
-    lastDate=c.date;
-    return head+'<div class="rota-row">'+
-      '<div class="rota-class"><strong>'+c.time+'</strong><span>Spinning Class · 45 min</span></div>'+
-      '<div class="rota-booking"><strong>'+c.booked+' / '+c.capacity+'</strong><span>Booked in Booklink</span></div>'+
-      '<div class="rota-status">'+classStatus(c)+'</div>'+
-      '<label class="rota-picker"><span>Instructor</span><select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select></label>'+
-    '</div>';
-  }).join("");
+  const groups=new Map();
+  state.classes.forEach(c=>{
+    if(!groups.has(c.date))groups.set(c.date,[]);
+    groups.get(c.date).push(c);
+  });
 
-  $(".rota-select").forEach(select=>{
+  $("#rotaList").innerHTML=[...groups.entries()].map(([date,items])=>
+    '<section class="rota-day-card">'+
+      '<div class="rota-day-head"><strong>'+dateLabel(date)+'</strong><span>'+items.length+' CLASS'+(items.length===1?'':'ES')+'</span></div>'+
+      '<div class="rota-day-sessions">'+items.map(c=>
+        '<article class="rota-session">'+
+          '<div class="rota-session-top">'+
+            '<strong class="rota-time">'+c.time+'</strong>'+
+            '<span class="booklink-count">'+c.booked+' / '+c.capacity+' BOOKED</span>'+
+          '</div>'+
+          '<div class="rota-session-meta">'+classStatus(c)+'<span>BOOKLINK SESSION</span></div>'+
+          '<label class="rota-picker"><span>Instructor</span><select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select></label>'+
+        '</article>'
+      ).join("")+'</div>'+
+    '</section>'
+  ).join("");
+
+  $$(".rota-select").forEach(select=>{
     select.onchange=async()=>{
       const chosen=select.value||null;
       select.disabled=true;
@@ -97,7 +107,7 @@ function renderRota(){
             instructor_id:chosen
           }]})
         });
-        toast(chosen?"Instructor saved.":"Instructor set to TBC.");
+        toast(chosen?"Instructor saved and published.":"Instructor set to TBC.");
         await refreshClasses();
       }catch(e){
         select.disabled=false;
