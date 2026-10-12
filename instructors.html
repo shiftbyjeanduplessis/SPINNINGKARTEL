@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#06070a">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Spinning Kartel | Instructor Schedule</title>
+  <link rel="stylesheet" href="instructors.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.webp" alt="Spinning Kartel">
+      <div>
+        <strong>SPINNING KARTEL</strong>
+        <small>INSTRUCTOR SCHEDULE · VIEW ONLY</small>
+      </div>
+    </div>
+    <div class="live-pill"><i></i><span id="liveLabel">LIVE</span></div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">CLASS FLOOR</p>
+        <h1>INSTRUCTOR<br>SCHEDULE</h1>
+        <p class="sub">Live booking numbers for upcoming classes. This page is view only.</p>
+      </div>
+      <div class="updated">
+        <span>LAST UPDATED</span>
+        <strong id="updatedAt">—</strong>
+      </div>
+    </section>
+
+    <section class="summary" aria-label="Schedule summary">
+      <article><span>Upcoming classes</span><strong id="classCount">0</strong></article>
+      <article><span>Booked seats</span><strong id="seatCount">0</strong></article>
+      <article><span>Full / almost full</span><strong id="busyCount">0</strong></article>
+    </section>
+
+    <section id="schedule" class="schedule">
+      <div class="loading">Loading live schedule…</div>
+    </section>
+
+    <p class="footer-note">Booking numbers refresh automatically. No customer details are shown here.</p>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="instructors.js"></script>
+</body>
+</html>
