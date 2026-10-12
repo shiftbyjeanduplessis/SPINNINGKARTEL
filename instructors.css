@@ -51,3 +51,10 @@ h1{margin:0;font-size:clamp(48px,7vw,86px);line-height:.86;letter-spacing:-.055e
   .summary{gap:6px}.summary article{padding:12px 9px}.summary strong{font-size:23px}
   .class-card{grid-template-columns:68px 1fr auto;gap:9px}.time{font-size:25px}.details strong{font-size:11px}.details span{font-size:9px}.count strong{font-size:21px}
 }
+body.instructor-auth-locked{visibility:hidden}
+.top-actions{display:flex;align-items:center;gap:9px}
+.top-link{min-height:32px;padding:0 11px;border:1px solid rgba(255,255,255,.16);border-radius:999px;display:inline-flex;align-items:center;background:transparent;color:#fff;text-decoration:none;font:inherit;font-size:9px;font-weight:900;cursor:pointer}
+.week-range{margin:12px 0 0;color:#fff;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:620px){
+  .top-actions{gap:6px}.top-link{padding:0 8px;font-size:8px}.live-pill{display:none}
+}
