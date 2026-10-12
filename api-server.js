@@ -150,44 +150,6 @@ function defaultInstructorFor(weekday, time) {
   return {name:v[0], note:v[1]};
 }
 
-function defaultInstructorFor(weekday, time) {
-  const key = String(weekday) + '|' + String(time);
-  const map = {
-    '1|05:30': {name:'Tammy'},
-    '1|08:00': {name:'Tammy'},
-    '1|17:00': {name:'Conraad'},
-    '1|18:00': {name:'Tammy'},
-    '1|19:00': {name:'Tammy', note:'If booked'},
-
-    '2|05:30': {name:'Tammy'},
-    '2|08:00': {name:'Tammy'},
-    '2|17:00': {name:'Conraad'},
-    '2|18:00': {name:'Tammy'},
-    '2|19:00': {name:'Demi'},
-
-    '3|05:30': {name:'Tammy', note:'Team Build'},
-    '3|08:00': {name:'Tammy'},
-    '3|17:00': {name:'Elzet'},
-    '3|18:00': {name:'Conraad'},
-    '3|19:00': {name:'Robbie'},
-
-    '4|05:30': {name:'Demi'},
-    '4|08:00': {name:'Tammy'},
-    '4|17:00': {name:'Tammy', note:'Team Build'},
-    '4|18:00': {name:'Tammy', note:'Team Build'},
-    '4|19:00': {name:'Tammy', note:'Team Build'},
-
-    '5|05:30': {name:'Robbie'},
-    '5|08:00': {name:'Tammy'},
-    '5|17:00': {name:'Elzet'},
-    '5|18:00': {name:'Tammy'},
-
-    '6|07:00': {name:'Tammy'},
-    '6|08:00': {name:'Instructor TBC', note:'Based on bookings'}
-  };
-  return map[key] || {name:'Instructor TBC'};
-}
-
 async function classRows(days, startDate) {
   const from = startDate || todayZA();
   const dates = [];
