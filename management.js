@@ -4,12 +4,13 @@ const TOKEN=localStorage.getItem("sk_admin_token");
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
+let state={classes:[],history:[],payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
 function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
 function addDays(date,n){const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function weekStart(date){const d=new Date(date+"T12:00:00Z");const dow=d.getUTCDay();d.setUTCDate(d.getUTCDate()-((dow+6)%7));return d.toISOString().slice(0,10);}
 function dateLabel(d){return new Date(d+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();}
 function roleLabel(r){return r==="student"?"Student instructor":r==="guest"?"Guest instructor":"Main instructor";}
 function money(v){return "R"+Number(v||0).toFixed(0);}
@@ -123,7 +124,7 @@ function attendanceMap(){return new Map(state.attendance.map(a=>[String(a.servic
 function renderAttendance(){
   const closed=attendanceMap();
   const t=today();
-  const rows=state.history.filter(c=>c.date<=t).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  const rows=state.payClasses.filter(c=>c.date<=t).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
   $("#attendanceList").innerHTML=rows.length?rows.map(c=>{
     const key=c.date+"|"+c.time, a=closed.get(key);
     if(a){
@@ -155,12 +156,44 @@ function renderAttendance(){
 }
 
 function renderPay(){
-  $("#paySummary").innerHTML=state.pay.length?state.pay.map(p=>'<article class="instructor-card">'+
+  const classPay=state.pay.reduce((s,p)=>s+Number(p.class_pay||0),0);
+  const commission=state.pay.reduce((s,p)=>s+Number(p.commission||0),0);
+  const total=state.pay.reduce((s,p)=>s+Number(p.total||0),0);
+
+  $("#payTotals").innerHTML=
+    '<article><span>CLASS PAY</span><strong>'+money(classPay)+'</strong></article>'+
+    '<article><span>COMMISSION</span><strong>'+money(commission)+'</strong></article>'+
+    '<article><span>TOTAL PAYROLL</span><strong>'+money(total)+'</strong></article>';
+
+  $("#paySummary").innerHTML=state.pay.length?state.pay.map(p=>'<article class="instructor-card pay-card">'+
     '<strong>'+esc(p.name)+'</strong><span>'+roleLabel(p.role)+'</span>'+
     '<span>'+p.classes+' closed classes · '+p.riders+' riders</span>'+
-    '<span>'+money(p.base_pay)+' base + '+money(p.commission_rate)+' / rider above 5</span>'+
-    '<span>Commission '+money(p.commission)+'</span><span class="total">'+money(p.total)+'</span>'+
-  '</article>').join(""):'<p class="muted">Add instructors to start tracking pay.</p>';
+    '<div class="pay-breakdown">'+
+      '<div><span>Class pay</span><strong>'+money(p.class_pay)+'</strong></div>'+
+      '<div><span>Commission</span><strong>'+money(p.commission)+'</strong></div>'+
+      '<div class="pay-total-row"><span>Total</span><strong>'+money(p.total)+'</strong></div>'+
+    '</div>'+
+    '<span class="pay-rate-note">'+money(p.base_pay)+' / class · '+money(p.commission_rate)+' / rider above 5</span>'+
+  '</article>').join(""):'<p class="muted">No instructor payroll records for this week.</p>';
+}
+
+function renderPayHistory(){
+  const current=weekStart(today());
+  const rows=state.payHistory.filter(w=>w.week_start<current);
+  $("#payHistory").innerHTML=rows.length?rows.map(w=>{
+    const end=addDays(w.week_start,6);
+    return '<button class="pay-history-row" type="button" data-week="'+w.week_start+'">'+
+      '<div><strong>'+dateLabel(w.week_start)+' — '+dateLabel(end)+'</strong><span>'+w.classes+' classes · '+w.riders+' riders</span></div>'+
+      '<div><span>Class pay</span><strong>'+money(w.class_pay)+'</strong></div>'+
+      '<div><span>Commission</span><strong>'+money(w.commission)+'</strong></div>'+
+      '<div><span>Total</span><strong>'+money(w.total)+'</strong></div>'+
+    '</button>';
+  }).join(""):'<p class="muted">No previous weekly payroll has been closed yet.</p>';
+
+  qsa(".pay-history-row").forEach(b=>b.onclick=async()=>{
+    state.payWeekStart=b.dataset.week;
+    await refreshAttendancePay();
+  });
 }
 
 function packageLabel(s){
@@ -230,13 +263,21 @@ async function refreshMemberships(){
 }
 
 async function refreshAttendancePay(){
-  const from=addDays(today(),-7), to=today();
-  const [a,p]=await Promise.all([
+  const from=state.payWeekStart||weekStart(today());
+  const to=addDays(from,6);
+  state.payWeekStart=from;
+  const [classes,a,p,h]=await Promise.all([
+    api("/api/admin/classes?from="+from+"&days=7"),
     api("/api/admin/attendance?from="+from+"&to="+to),
-    api("/api/admin/pay?from="+addDays(today(),-30)+"&to="+to)
+    api("/api/admin/pay?from="+from+"&to="+to),
+    api("/api/admin/pay-history?weeks=10")
   ]);
-  state.attendance=a.attendance||[]; state.pay=p.pay||[];
-  renderAttendance();renderPay();
+  state.payClasses=classes.classes||[];
+  state.attendance=a.attendance||[];
+  state.pay=p.pay||[];
+  state.payHistory=h.weeks||[];
+  $("#payWeekLabel").textContent=dateLabel(from)+" — "+dateLabel(to);
+  renderAttendance();renderPay();renderPayHistory();
 }
 
 async function refreshWebhooks(){
@@ -250,10 +291,8 @@ $("#instructorForm").onsubmit=async e=>{
     await api("/api/admin/instructors",{method:"POST",body:JSON.stringify({
       name:$("#instructorName").value.trim(),
       role:$("#instructorRole").value,
-      base_pay:Number($("#instructorBase").value),
-      commission_rate:Number($("#instructorCommission").value)
     })});
-    e.target.reset();$("#instructorBase").value=200;$("#instructorCommission").value=10;$("#instructorDialog").close();
+    e.target.reset();$("#instructorDialog").close();
     toast("Instructor added.");
     state.instructors=(await api("/api/admin/instructors")).instructors||[];
     renderInstructors();renderRota();renderToday();
@@ -272,6 +311,9 @@ $("#memberForm").onsubmit=async e=>{
     e.target.reset();$("#memberDialog").close();toast("Member added.");await refreshMemberships();
   }catch(err){toast(err.message);}
 };
+
+$("#payPrevWeek").onclick=async()=>{state.payWeekStart=addDays(state.payWeekStart||weekStart(today()),-7);await refreshAttendancePay();};
+$("#payThisWeek").onclick=async()=>{state.payWeekStart=weekStart(today());await refreshAttendancePay();};
 
 async function boot(){
   if(!TOKEN){
