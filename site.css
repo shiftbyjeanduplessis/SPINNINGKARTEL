@@ -122,6 +122,10 @@ section{scroll-margin-top:82px}
 .quick-card small{display:block;font-size:8px;font-weight:900;letter-spacing:.10em;color:#8e98a5}
 .quick-card strong{display:block;margin-top:7px;font-size:30px;letter-spacing:-.05em}
 .quick-card p{margin:4px 0 0;color:#b9c1cc;font-size:10px}
+.quick-card .class-instructor{margin-top:8px;color:#fff;font-size:9px;font-weight:950;letter-spacing:.06em}
+.quick-card .instructor-name{color:#fff}
+.quick-card .instructor-note{color:#8feeff;font-weight:900}
+.quick-card .class-meta{color:#9aa4b1}
 .quick-status{position:absolute;right:14px;top:16px;font-size:7px;font-weight:950;letter-spacing:.08em;color:var(--green)}
 .quick-status.open{color:var(--green)}
 .quick-card.open{
