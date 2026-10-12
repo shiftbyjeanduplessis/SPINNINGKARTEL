@@ -138,6 +138,19 @@ function statusFor(booked, capacity) {
 }
 
 function defaultInstructorFor(weekday, time) {
+  const map = {
+    '1|05:30':['Tammy',''], '1|08:00':['Tammy',''], '1|17:00':['Conraad',''], '1|18:00':['Tammy',''], '1|19:00':['Tammy','If booked'],
+    '2|05:30':['Tammy',''], '2|08:00':['Tammy',''], '2|17:00':['Conraad',''], '2|18:00':['Tammy',''], '2|19:00':['Demi',''],
+    '3|05:30':['Tammy','Team Build'], '3|08:00':['Tammy',''], '3|17:00':['Elzet',''], '3|18:00':['Conraad',''], '3|19:00':['Robbie',''],
+    '4|05:30':['Demi',''], '4|08:00':['Tammy',''], '4|17:00':['Tammy','Team Build'], '4|18:00':['Tammy','Team Build'], '4|19:00':['Tammy','Team Build'],
+    '5|05:30':['Robbie',''], '5|08:00':['Tammy',''], '5|17:00':['Elzet',''], '5|18:00':['Tammy',''],
+    '6|07:00':['Tammy',''], '6|08:00':['Instructor TBC','Based on bookings']
+  };
+  const v = map[String(weekday)+'|'+String(time)] || ['Instructor TBC',''];
+  return {name:v[0], note:v[1]};
+}
+
+function defaultInstructorFor(weekday, time) {
   const key = String(weekday) + '|' + String(time);
   const map = {
     '1|05:30': {name:'Tammy'},
