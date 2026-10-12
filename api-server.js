@@ -415,16 +415,24 @@ async function handler(req, res) {
     if (!admin) return json(res, 401, {error:'unauthorized'}, origin);
 
     if (req.method === 'GET' && path === '/api/admin/instructors') {
-      const q = await pool.query("SELECT * FROM sk_instructors ORDER BY active DESC,name");
+      const q = await pool.query(`
+        SELECT i.*,
+               CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END::numeric AS base_pay,
+               10::numeric AS commission_rate
+        FROM sk_instructors i
+        ORDER BY active DESC,name
+      `);
       return json(res, 200, {instructors:q.rows}, origin);
     }
 
     if (req.method === 'POST' && path === '/api/admin/instructors') {
       const b = await readJson(req);
+      const name = String(b.name || '').trim();
+      const basePay = name.toLowerCase()==='tammy' ? 200 : 150;
       const q = await pool.query(`
         INSERT INTO sk_instructors(name,role,base_pay,commission_rate)
-        VALUES($1,$2,$3,$4) RETURNING *
-      `, [String(b.name || '').trim(), b.role || 'main', Number(b.base_pay ?? 200), Number(b.commission_rate ?? 10)]);
+        VALUES($1,$2,$3,10) RETURNING *
+      `, [name, b.role || 'main', basePay]);
       return json(res, 201, {instructor:q.rows[0]}, origin);
     }
 
@@ -492,20 +500,47 @@ async function handler(req, res) {
     }
 
     if (req.method === 'GET' && path === '/api/admin/pay') {
-      const from = u.searchParams.get('from') || addDays(todayZA(), -30);
+      const from = u.searchParams.get('from') || addDays(todayZA(), -6);
       const to = u.searchParams.get('to') || todayZA();
       const q = await pool.query(`
-        SELECT i.id,i.name,i.role,i.base_pay,i.commission_rate,
+        SELECT i.id,i.name,i.role,
+               CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END::numeric AS base_pay,
+               10::numeric AS commission_rate,
                COUNT(a.*)::int AS classes,
                COALESCE(SUM(a.attended_count),0)::int AS riders,
-               COALESCE(SUM(GREATEST(a.attended_count-5,0) * i.commission_rate),0)::numeric AS commission,
-               COALESCE(SUM(i.base_pay + GREATEST(a.attended_count-5,0) * i.commission_rate),0)::numeric AS total
+               (COUNT(a.*) * CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END)::numeric AS class_pay,
+               COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
+               ((COUNT(a.*) * CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END)
+                 + COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0))::numeric AS total
         FROM sk_instructors i
-        LEFT JOIN sk_attendance a ON a.instructor_id=i.id AND a.closed_at IS NOT NULL AND a.service_date BETWEEN $1 AND $2
+        LEFT JOIN sk_attendance a
+          ON a.instructor_id=i.id
+         AND a.closed_at IS NOT NULL
+         AND a.service_date BETWEEN $1 AND $2
         GROUP BY i.id
         ORDER BY i.name
       `,[from,to]);
       return json(res, 200, {from,to,pay:q.rows}, origin);
+    }
+
+    if (req.method === 'GET' && path === '/api/admin/pay-history') {
+      const weeks = Math.min(16, Math.max(1, Number(u.searchParams.get('weeks') || 8)));
+      const q = await pool.query(`
+        SELECT to_char(date_trunc('week',a.service_date::timestamp),'YYYY-MM-DD') AS week_start,
+               COUNT(*)::int AS classes,
+               COALESCE(SUM(a.attended_count),0)::int AS riders,
+               COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)::numeric AS class_pay,
+               COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
+               (COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)
+                + COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0))::numeric AS total
+        FROM sk_attendance a
+        JOIN sk_instructors i ON i.id=a.instructor_id
+        WHERE a.closed_at IS NOT NULL
+        GROUP BY 1
+        ORDER BY 1 DESC
+        LIMIT $1
+      `,[weeks]);
+      return json(res, 200, {weeks:q.rows}, origin);
     }
 
     if (req.method === 'GET' && path === '/api/admin/attendance') {
