@@ -1,6 +1,5 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
-const TOKEN=localStorage.getItem("sk_admin_token");
 const $=s=>document.querySelector(s);
 
 function todayZA(){
@@ -46,14 +45,17 @@ function statusLabel(c){
   if(s==="almost")return Math.max(0,cap-booked)+" LEFT";
   return Math.max(0,cap-booked)+" OPEN";
 }
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
 function card(c){
   const booked=Math.max(0,Number(c.booked||0));
   const cap=Math.max(1,Number(c.capacity||12));
   const s=classState(c);
   const instructor=(c.instructor&&c.instructor!=="Instructor TBC")?c.instructor:"Instructor TBC";
   return '<article class="class-card '+s+'">'+
-    '<div class="time">'+c.time+'</div>'+
-    '<div class="details"><strong>'+rideName(c.time)+'</strong><span>'+instructor+'</span></div>'+
+    '<div class="time">'+esc(c.time)+'</div>'+
+    '<div class="details"><strong>'+esc(rideName(c.time))+'</strong><span>'+esc(instructor)+'</span></div>'+
     '<div class="count"><strong>'+booked+' / '+cap+'</strong><span class="'+s+'">'+statusLabel(c)+'</span></div>'+
   '</article>';
 }
@@ -75,46 +77,21 @@ function render(rows,start){
   $("#busyCount").textContent=rows.filter(c=>classState(c)!=="open").length;
   $("#weekRange").textContent=shortDate(start)+" — "+shortDate(addDays(start,6));
 }
-function goLogin(){
-  localStorage.removeItem("sk_admin_token");
-  location.replace("login.html?next=instructors.html");
-}
-async function api(path){
-  const r=await fetch(API+path,{
-    headers:{"authorization":"Bearer "+TOKEN},
-    cache:"no-store"
-  });
-  if(r.status===401){goLogin();throw new Error("Session expired");}
-  if(!r.ok)throw new Error("Could not load schedule");
-  return r.json();
-}
 async function refresh(){
   const start=weekStart(todayZA());
   try{
-    const data=await api("/api/admin/classes?days=7&from="+encodeURIComponent(start)+"&t="+Date.now());
+    const r=await fetch(API+"/api/public/classes?days=7&from="+encodeURIComponent(start)+"&t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("Could not load schedule");
+    const data=await r.json();
     render(data.classes||[],start);
     $("#updatedAt").textContent=new Date().toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZone:"Africa/Johannesburg"});
     $("#liveLabel").textContent="LIVE";
-    document.body.classList.remove("instructor-auth-locked");
   }catch(e){
-    if(e.message==="Session expired")return;
     $("#liveLabel").textContent="RETRYING";
-    $("#schedule").innerHTML='<div class="error">Could not refresh booking counts. Retrying automatically…</div>';
-    document.body.classList.remove("instructor-auth-locked");
+    $("#schedule").innerHTML='<div class="error">Could not refresh schedule. Retrying automatically…</div>';
   }
 }
-async function boot(){
-  if(!TOKEN){goLogin();return;}
-  try{
-    const r=await fetch(API+"/api/admin/session",{headers:{"authorization":"Bearer "+TOKEN},cache:"no-store"});
-    if(!r.ok){goLogin();return;}
-    await refresh();
-  }catch(e){
-    goLogin();
-  }
-}
-$("#logoutBtn").onclick=()=>goLogin();
-boot();
+refresh();
 setInterval(()=>{if(!document.hidden)refresh()},10000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 window.addEventListener("focus",refresh);
