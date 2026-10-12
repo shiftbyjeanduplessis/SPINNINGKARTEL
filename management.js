@@ -2,7 +2,8 @@ const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
 const TOKEN=localStorage.getItem("sk_admin_token");
 
-const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s);
+const qsa=s=>[...document.querySelectorAll(s)];
 let state={classes:[],history:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
@@ -24,13 +25,13 @@ async function api(path,options={}){
 }
 
 function showView(name){
-  $$(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));
-  $$(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
+  qsa(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));
+  qsa(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
 }
-$$(".nav").forEach(n=>n.onclick=()=>showView(n.dataset.view));
+qsa(".nav").forEach(n=>n.onclick=()=>showView(n.dataset.view));
 $("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html";};
-$$("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
-$$("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+qsa("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
+qsa("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 
 function classStatus(c){
   if(c.status==="full") return '<span class="badge full">FULL</span>';
@@ -94,7 +95,7 @@ function renderRota(){
     '</section>'
   ).join("");
 
-  $$(".rota-select").forEach(select=>{
+  qsa(".rota-select").forEach(select=>{
     select.onchange=async()=>{
       const chosen=select.value||null;
       select.disabled=true;
@@ -142,7 +143,7 @@ function renderAttendance(){
     '</div>';
   }).join(""):'<p class="muted">No classes to close yet.</p>';
 
-  $$(".close-class").forEach(b=>b.onclick=async()=>{
+  qsa(".close-class").forEach(b=>b.onclick=async()=>{
     const key=b.dataset.date+"|"+b.dataset.time;
     const inp=document.querySelector('.attendance-input[data-key="'+key+'"]');
     try{
@@ -179,7 +180,7 @@ function renderMemberships(){
     '<button class="mini primary member-save" data-id="'+m.id+'">SAVE</button>'+
   '</article>').join(""):'<p class="muted">No Monthly Unlimited members yet.</p>';
 
-  $$(".member-save").forEach(b=>b.onclick=async()=>{
+  qsa(".member-save").forEach(b=>b.onclick=async()=>{
     const id=b.dataset.id;
     const payment=document.querySelector('.member-payment[data-id="'+id+'"]').value;
     const pack=document.querySelector('.member-package[data-id="'+id+'"]').value;
