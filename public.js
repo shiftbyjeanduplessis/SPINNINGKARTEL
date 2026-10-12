@@ -86,6 +86,16 @@ function fallback(){
   }
   return rows.filter(futureClass);
 }
+function renderInstructorSchedule(rows){
+  const el=$("#instructorSchedule");if(!el)return;
+  const visible=rows.slice(0,18);
+  el.innerHTML=visible.map(c=>
+    '<article class="instructor-slot">'+
+      '<div class="instructor-slot-date"><small>'+prettyDate(c.date)+'</small><strong>'+esc(c.time)+'</strong></div>'+
+      '<div class="instructor-slot-name"><span>'+esc(rideName(c.time))+'</span><strong>'+esc(c.instructor||"Instructor TBC")+'</strong></div>'+
+    '</article>'
+  ).join("")||'<div class="schedule-loading">Instructor schedule coming soon.</div>';
+}
 function renderFull(rows){
   const el=$("#fullSchedule");if(!el)return;
   const groups=new Map();
@@ -113,6 +123,7 @@ async function bootSchedule(){
   const quick=$("#quickSchedule");
   if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||'<div class="schedule-loading">No upcoming classes found.</div>';
   renderFull(rows);
+  renderInstructorSchedule(rows);
 }
 const toggle=$("#toggleFullSchedule");
 if(toggle){
