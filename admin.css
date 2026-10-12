@@ -42,3 +42,98 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 .integration-note code{display:block;background:#0d1117;color:#9ec1ff;padding:12px;border-radius:9px;overflow:auto;font-size:11px}.ok-text{color:var(--green)}.warn-text{color:var(--amber)}
 @media(max-width:900px){.ops-row{grid-template-columns:80px 1fr 1fr}.ops-row>a,.ops-row>.badge{grid-column:auto}.rota-row{grid-template-columns:90px 90px 1fr}.rota-picker{grid-column:1/-1}.attendance-row{grid-template-columns:1fr 1fr}.live-member{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.ops-row,.rota-row,.attendance-row,.live-member,.event-row{grid-template-columns:1fr}.ops-row>a{width:max-content}.rota-picker{grid-column:auto;grid-template-columns:1fr}.rota-status{justify-content:flex-start}}
+
+/* Booklink class calendar */
+.rota-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.rota-day-card{
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#f8f7f4;
+  overflow:hidden;
+}
+.rota-day-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  background:#111;
+  color:#fff;
+}
+.rota-day-head strong{
+  font-size:12px;
+  letter-spacing:.08em;
+}
+.rota-day-head span{
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#aeb6c0;
+}
+.rota-day-sessions{
+  display:grid;
+  gap:8px;
+  padding:10px;
+}
+.rota-session{
+  padding:12px;
+  border:1px solid #e7e2da;
+  border-radius:12px;
+  background:#fff;
+}
+.rota-session-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.rota-time{
+  font-size:24px;
+  letter-spacing:-.04em;
+}
+.booklink-count{
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.06em;
+  color:#5d6672;
+}
+.rota-session-meta{
+  margin:8px 0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.rota-session-meta>span:last-child{
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#8b94a0;
+}
+.rota-session .rota-picker{
+  display:grid;
+  grid-template-columns:74px 1fr;
+  gap:10px;
+  align-items:center;
+  margin:0;
+}
+.rota-session .rota-picker>span{
+  font-size:9px;
+  font-weight:950;
+  color:#111;
+}
+.rota-session .rota-picker select{
+  min-height:40px;
+  width:100%;
+  font-weight:850;
+}
+@media(max-width:900px){
+  .rota-list{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .rota-session .rota-picker{grid-template-columns:1fr}
+}
