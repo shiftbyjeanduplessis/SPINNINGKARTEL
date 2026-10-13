@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s);
 const TOKEN=localStorage.getItem("sk_admin_token");
 
 async function requireAdminSession(){
-  if(!TOKEN){location.replace("login.html");return false;}
+  if(!TOKEN){location.replace("login.html?next=instructors.html");return false;}
   try{
     const r=await fetch(API+"/api/admin/session",{headers:{"authorization":"Bearer "+TOKEN},cache:"no-store"});
     if(!r.ok) throw new Error("unauthorized");
@@ -12,7 +12,7 @@ async function requireAdminSession(){
     return true;
   }catch(e){
     localStorage.removeItem("sk_admin_token");
-    location.replace("login.html");
+    location.replace("login.html?next=instructors.html");
     return false;
   }
 }
