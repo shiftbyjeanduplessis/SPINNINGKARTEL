@@ -187,7 +187,7 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 .weekly-booking-summary span{font-size:10px;color:var(--muted)}
 .weekly-booking-chart{
   min-height:230px;padding:12px 4px 14px;
-  display:flex;align-items:flex-end;gap:14px;
+  display:flex;align-items:flex-end;justify-content:flex-start;gap:14px;
   overflow-x:auto;border-top:1px solid var(--line)
 }
 .week-bar-item{
@@ -225,4 +225,35 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 @media(max-width:760px){
   .weekly-booking-summary{display:grid;gap:3px}
   .booking-bar-item{flex-basis:38px}
+}
+
+/* Owner dashboard insights */
+.owner-insights-panel{margin-top:17px}
+.owner-insight-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.owner-insight-cards article{min-height:132px;padding:17px;border:1px solid var(--line);border-radius:14px;background:#f8f7f4}
+.owner-insight-cards span{display:block;font-size:8px;font-weight:950;letter-spacing:.09em;color:var(--muted)}
+.owner-insight-cards strong{display:block;margin-top:13px;font-size:31px;letter-spacing:-.04em}
+.owner-insight-cards strong.insight-text{font-size:17px;line-height:1.15;letter-spacing:-.02em}
+.owner-insight-cards small{display:block;margin-top:7px;font-size:9px;color:var(--muted)}
+.instructor-month-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:26px 0 10px;padding-top:20px;border-top:1px solid var(--line)}
+.instructor-month-head h3{margin:0;font-size:20px;letter-spacing:-.03em}
+.instructor-month-head>p{max-width:430px;margin:0;font-size:10px;line-height:1.5;color:var(--muted)}
+.instructor-month-table{display:grid;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.instructor-month-row{display:grid;grid-template-columns:1.3fr .6fr .7fr .8fr .8fr .6fr .8fr;gap:10px;align-items:center;padding:11px 13px;border-top:1px solid #ece8e1;font-size:10px}
+.instructor-month-row:first-child{border-top:0}
+.instructor-month-row.header{background:#f4f1ec;font-size:8px;font-weight:950;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.instructor-month-row strong{font-size:11px}
+.week-bar-item{cursor:default}
+@media(max-width:900px){
+  .owner-insight-cards{grid-template-columns:1fr 1fr}
+  .instructor-month-table{overflow-x:auto}
+  .instructor-month-row{min-width:760px}
+}
+@media(max-width:560px){
+  .owner-insight-cards{grid-template-columns:1fr 1fr}
+  .owner-insight-cards article{min-height:112px;padding:13px}
+  .owner-insight-cards strong{font-size:25px}
+  .owner-insight-cards strong.insight-text{font-size:14px}
+  .instructor-month-head{display:block}
+  .instructor-month-head>p{margin-top:8px}
 }
