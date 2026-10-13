@@ -4,7 +4,7 @@ const TOKEN=localStorage.getItem("sk_admin_token");
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],weeklyClasses:[],bookingWeeks:[],payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
+let state={classes:[],history:[],weeklyClasses:[],bookingWeeks:[],ownerInsights:null,payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
@@ -22,24 +22,24 @@ function shortWeekLabel(d){
 }
 
 function renderWeeklyBookings(){
-  const weeks=state.bookingWeeks||[];
+  const allWeeks=state.bookingWeeks||[];
+  const firstReal=allWeeks.findIndex(w=>Number(w.bookings||0)>0);
+  const weeks=firstReal>=0?allWeeks.slice(firstReal):(allWeeks.length?allWeeks.slice(-1):[]);
   const chart=$("#weeklyBookingChart");
-  const details=$("#weeklyBookingDetails");
   const summary=$("#weeklyBookingSummary");
   const label=$("#weeklyBookingLabel");
 
-  if(label) label.textContent="Last "+weeks.length+" week"+(weeks.length===1?"":"s");
+  if(label) label.textContent="Since opening";
 
   const total=weeks.reduce((s,w)=>s+Number(w.bookings||0),0);
   const latest=weeks.length?Number(weeks[weeks.length-1].bookings||0):0;
   if(summary) summary.innerHTML=
     '<strong>'+latest+' bookings this week</strong>'+
-    '<span>'+total+' bookings across the displayed period</span>';
+    '<span>'+total+' bookings since tracking began</span>';
 
-  if(!chart||!details) return;
+  if(!chart) return;
   if(!weeks.length){
-    chart.innerHTML='<p class="muted">No weekly booking data yet.</p>';
-    details.innerHTML="";
+    chart.innerHTML='<p class="muted">Bookings will appear here as the studio grows.</p>';
     return;
   }
 
@@ -48,49 +48,65 @@ function renderWeeklyBookings(){
     const bookings=Number(w.bookings||0);
     const height=Math.max(3,Math.round(bookings/max*100));
     const active=idx===weeks.length-1?" current":"";
-    return '<button class="week-bar-item'+active+'" type="button" data-week="'+esc(w.week_start)+'" title="'+bookings+' bookings">'+
+    return '<div class="week-bar-item'+active+'" title="'+bookings+' bookings">'+
       '<div class="week-bar-value">'+bookings+'</div>'+
       '<div class="week-bar-track"><div class="week-bar-fill" style="height:'+height+'%"></div></div>'+
       '<strong>'+shortWeekLabel(w.week_start)+'</strong>'+
       '<span>WEEK</span>'+
-    '</button>';
+    '</div>';
   }).join("");
-
-  details.innerHTML=weeks.slice().reverse().map((w,idx)=>{
-    const items=Array.isArray(w.classes)?w.classes:[];
-    return '<details class="week-detail" '+(idx===0?'open':'')+'>'+
-      '<summary>'+
-        '<div><strong>'+dateLabel(w.week_start)+' — '+dateLabel(addDays(w.week_start,6))+'</strong>'+
-        '<span>'+Number(w.bookings||0)+' bookings</span></div>'+
-        '<b>VIEW DETAIL</b>'+
-      '</summary>'+
-      '<div class="week-detail-rows">'+
-        (items.length?items.map(c=>
-          '<div class="week-detail-row">'+
-            '<span>'+dateLabel(c.date)+'</span>'+
-            '<strong>'+esc(c.time)+'</strong>'+
-            '<span>'+Number(c.booked||0)+' / '+Number(c.capacity||12)+' booked</span>'+
-          '</div>'
-        ).join(""):'<p class="muted">No tracked class bookings for this week.</p>')+
-      '</div>'+
-    '</details>';
-  }).join("");
-
-  qsa(".week-bar-item").forEach(btn=>btn.onclick=()=>{
-    const target=details.querySelector('.week-detail summary strong');
-    const all=[...details.querySelectorAll(".week-detail")];
-    const match=all.find(d=>d.querySelector("summary strong")?.textContent.startsWith(dateLabel(btn.dataset.week)));
-    if(match){
-      match.open=true;
-      match.scrollIntoView({behavior:"smooth",block:"nearest"});
-    }
-  });
 }
 
 async function refreshWeeklyBookings(){
   const data=await api("/api/admin/booking-weeks?weeks=8");
   state.bookingWeeks=data.weeks||[];
   renderWeeklyBookings();
+}
+
+function pct(v){return Number(v||0).toFixed(0)+"%";}
+
+function renderOwnerInsights(){
+  const d=state.ownerInsights;
+  const cards=$("#ownerInsightCards");
+  const table=$("#instructorMonthTable");
+  const title=$("#ownerInsightTitle");
+  if(!cards||!table) return;
+  if(!d){
+    cards.innerHTML='<p class="muted">Loading insights…</p>';
+    table.innerHTML="";
+    return;
+  }
+  if(title) title.textContent=d.month_label||"This month";
+
+  const busiest=d.busiest_class
+    ? esc(d.busiest_class.day_label)+" "+esc(d.busiest_class.time)+" · "+Number(d.busiest_class.booked||0)+"/"+Number(d.busiest_class.capacity||12)
+    : "No booking data yet";
+
+  cards.innerHTML=
+    '<article><span>AVG BOOKINGS / DAY</span><strong>'+Number(d.avg_bookings_per_day||0).toFixed(1)+'</strong><small>Days with bookings</small></article>'+
+    '<article><span>AVG BOOKINGS / CLASS</span><strong>'+Number(d.avg_bookings_per_class||0).toFixed(1)+'</strong><small>Classes with bookings</small></article>'+
+    '<article><span>OCCUPANCY</span><strong>'+pct(d.occupancy_pct)+'</strong><small>Across booked classes</small></article>'+
+    '<article><span>BUSIEST CLASS</span><strong class="insight-text">'+busiest+'</strong><small>'+Number(d.total_bookings||0)+' booked seats this month</small></article>';
+
+  const rows=Array.isArray(d.instructors)?d.instructors:[];
+  table.innerHTML=rows.length
+    ? '<div class="instructor-month-row header"><span>Instructor</span><span>Classes</span><span>Bookings</span><span>Avg / class</span><span>Occupancy</span><span>Riders</span><span>Pay to date</span></div>'+
+      rows.map(r=>'<div class="instructor-month-row">'+
+        '<strong>'+esc(r.name)+'</strong>'+
+        '<span>'+Number(r.classes||0)+'</span>'+
+        '<span>'+Number(r.bookings||0)+'</span>'+
+        '<span>'+Number(r.avg_bookings_per_class||0).toFixed(1)+'</span>'+
+        '<span>'+pct(r.occupancy_pct)+'</span>'+
+        '<span>'+Number(r.riders||0)+'</span>'+
+        '<strong>'+money(r.pay||0)+'</strong>'+
+      '</div>').join("")
+    : '<p class="muted">Instructor figures will appear once classes are assigned.</p>';
+}
+
+async function refreshOwnerInsights(){
+  const d=await api("/api/admin/owner-insights");
+  state.ownerInsights=d;
+  renderOwnerInsights();
 }
 
 async function api(path,options={}){
@@ -426,7 +442,7 @@ async function boot(){
     const [i,m]=await Promise.all([api("/api/admin/instructors"),api("/api/admin/memberships")]);
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
-    await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshAttendancePay(),refreshWebhooks()]);
+    await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshOwnerInsights(),refreshAttendancePay(),refreshWebhooks()]);
     document.body.classList.remove("admin-auth-locked");
   }catch(e){
     // Security-first: never reveal the management interface unless authentication
