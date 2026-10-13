@@ -553,6 +553,7 @@ async function handler(req, res) {
                CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END::numeric AS base_pay,
                10::numeric AS commission_rate,
                COUNT(a.*)::int AS classes,
+               COALESCE(SUM(a.booked_count),0)::int AS booked,
                COALESCE(SUM(a.attended_count),0)::int AS riders,
                (COUNT(a.*) * CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END)::numeric AS class_pay,
                COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
@@ -574,6 +575,7 @@ async function handler(req, res) {
       const q = await pool.query(`
         SELECT to_char(date_trunc('week',a.service_date::timestamp),'YYYY-MM-DD') AS week_start,
                COUNT(*)::int AS classes,
+               COALESCE(SUM(a.booked_count),0)::int AS booked,
                COALESCE(SUM(a.attended_count),0)::int AS riders,
                COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)::numeric AS class_pay,
                COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
