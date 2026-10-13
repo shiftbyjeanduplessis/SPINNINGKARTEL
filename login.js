@@ -3,7 +3,9 @@ const API=cfg.apiBaseUrl||"";
 const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
 const passwordInput=document.querySelector("#adminPassword");
-const NEXT="management.html";
+const params=new URLSearchParams(location.search);
+const requestedNext=params.get("next");
+const NEXT=requestedNext==="instructors.html"?"instructors.html":"management.html";
 
 async function validateSavedSession(){
   const token=localStorage.getItem("sk_admin_token");
