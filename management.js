@@ -4,7 +4,7 @@ const TOKEN=localStorage.getItem("sk_admin_token");
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
+let state={classes:[],history:[],weeklyClasses:[],payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
@@ -14,6 +14,52 @@ function weekStart(date){const d=new Date(date+"T12:00:00Z");const dow=d.getUTCD
 function dateLabel(d){return new Date(d+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();}
 function roleLabel(r){return r==="student"?"Student instructor":r==="guest"?"Guest instructor":"Main instructor";}
 function money(v){return "R"+Number(v||0).toFixed(0);}
+
+function commissionFor(riders){return Math.max(0,Number(riders||0)-5)*10;}
+
+function renderWeeklyBookings(){
+  const rows=state.weeklyClasses||[];
+  const start=weekStart(today());
+  const end=addDays(start,6);
+  const totalBooked=rows.reduce((s,c)=>s+Number(c.booked||0),0);
+  const totalCapacity=rows.reduce((s,c)=>s+Number(c.capacity||12),0);
+  const pct=totalCapacity?Math.round(totalBooked/totalCapacity*100):0;
+
+  const label=$("#weeklyBookingLabel");
+  if(label) label.textContent=dateLabel(start)+" — "+dateLabel(end);
+
+  const summary=$("#weeklyBookingSummary");
+  if(summary) summary.innerHTML=
+    '<strong>'+totalBooked+' bookings</strong>'+
+    '<span>'+rows.length+' classes · '+pct+'% of available bikes booked</span>';
+
+  const chart=$("#weeklyBookingChart");
+  if(!chart) return;
+  if(!rows.length){
+    chart.innerHTML='<p class="muted">No classes in this week.</p>';
+    return;
+  }
+
+  chart.innerHTML=rows.map(c=>{
+    const booked=Math.max(0,Number(c.booked||0));
+    const cap=Math.max(1,Number(c.capacity||12));
+    const height=Math.max(3,Math.min(100,booked/cap*100));
+    const day=new Date(c.date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short"}).toUpperCase();
+    return '<div class="booking-bar-item" title="'+booked+' of '+cap+' booked">'+
+      '<div class="booking-bar-value">'+booked+'</div>'+
+      '<div class="booking-bar-track"><div class="booking-bar-fill" style="height:'+height+'%"></div></div>'+
+      '<strong>'+day+'</strong>'+
+      '<span>'+esc(c.time)+'</span>'+
+    '</div>';
+  }).join("");
+}
+
+async function refreshWeeklyBookings(){
+  const start=weekStart(today());
+  const data=await api("/api/admin/classes?from="+start+"&days=7");
+  state.weeklyClasses=data.classes||[];
+  renderWeeklyBookings();
+}
 
 async function api(path,options={}){
   const headers={...(options.headers||{}),"authorization":"Bearer "+TOKEN};
@@ -132,17 +178,22 @@ function renderAttendance(){
         '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(a.instructor_name||c.instructor)+'</span></div>'+
         '<div><strong>'+a.booked_count+'</strong><span>Booked</span></div>'+
         '<div><strong>'+a.attended_count+'</strong><span>Attended</span></div>'+
-        '<div><strong>'+a.no_show_count+'</strong><span>No-shows</span></div>'+
+        '<div><strong>'+money(commissionFor(a.attended_count))+'</strong><span>Commission</span></div>'+
         '<span class="status-pill active">CLOSED</span>'+
       '</div>';
     }
     return '<div class="attendance-row">'+
       '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(c.instructor)+'</span></div>'+
       '<div><strong>'+c.booked+'</strong><span>Booked</span></div>'+
-      '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="12" value="'+c.booked+'"></label>'+
+      '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="12" value="'+c.booked+'"><span class="commission-preview" data-preview="'+key+'">Commission if closed: '+money(commissionFor(c.booked))+'</span></label>'+
       '<button class="mini primary close-class" data-date="'+c.date+'" data-time="'+c.time+'" '+(!c.instructor_id?'disabled title="Assign an instructor first"':'')+'>CLOSE CLASS</button>'+
     '</div>';
   }).join(""):'<p class="muted">No classes to close yet.</p>';
+
+  qsa(".attendance-input").forEach(inp=>inp.oninput=()=>{
+    const preview=document.querySelector('[data-preview="'+inp.dataset.key+'"]');
+    if(preview) preview.textContent="Commission if closed: "+money(commissionFor(inp.value));
+  });
 
   qsa(".close-class").forEach(b=>b.onclick=async()=>{
     const key=b.dataset.date+"|"+b.dataset.time;
@@ -338,7 +389,7 @@ async function boot(){
     const [i,m]=await Promise.all([api("/api/admin/instructors"),api("/api/admin/memberships")]);
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
-    await Promise.all([refreshClasses(),refreshAttendancePay(),refreshWebhooks()]);
+    await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshAttendancePay(),refreshWebhooks()]);
     document.body.classList.remove("admin-auth-locked");
   }catch(e){
     // Security-first: never reveal the management interface unless authentication
