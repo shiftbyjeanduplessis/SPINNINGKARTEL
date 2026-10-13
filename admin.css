@@ -144,11 +144,18 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff
 }
 .pay-weekbar>strong{text-align:center;font-size:12px;letter-spacing:.05em}
-.pay-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.pay-totals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
 .pay-totals article{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
 .pay-totals span{display:block;font-size:9px;font-weight:900;color:var(--muted);letter-spacing:.08em}
 .pay-totals strong{display:block;margin-top:7px;font-size:28px;letter-spacing:-.04em}
-.pay-card{min-height:225px}
+.pay-card{min-height:245px}
+.pay-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.pay-card-head>div>strong{font-size:16px}
+.pay-card-total{font-size:24px!important;line-height:1;color:#111}
+.pay-week-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.pay-week-metrics>div{padding:11px 12px;border-radius:10px;background:#f6f4ef;border:1px solid #e8e2d8}
+.pay-week-metrics span{margin:0 0 4px;font-size:8px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.pay-week-metrics strong{font-size:22px}
 .pay-breakdown{display:grid;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .pay-breakdown>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .pay-breakdown span{margin:0}
@@ -168,7 +175,8 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 .pay-history-row>div:last-child strong{font-size:16px}
 @media(max-width:760px){
   .pay-weekbar{grid-template-columns:1fr 1fr}.pay-weekbar>strong{grid-column:1/-1;grid-row:1}
-  .pay-totals{grid-template-columns:1fr}
+  .pay-totals{grid-template-columns:1fr 1fr}
+  .pay-week-metrics{grid-template-columns:1fr 1fr}
   .pay-history-row{grid-template-columns:1fr 1fr}
 }
 
