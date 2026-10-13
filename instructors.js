@@ -1,6 +1,21 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
 const $=s=>document.querySelector(s);
+const TOKEN=localStorage.getItem("sk_admin_token");
+
+async function requireAdminSession(){
+  if(!TOKEN){location.replace("login.html");return false;}
+  try{
+    const r=await fetch(API+"/api/admin/session",{headers:{"authorization":"Bearer "+TOKEN},cache:"no-store"});
+    if(!r.ok) throw new Error("unauthorized");
+    document.body.classList.remove("admin-auth-locked");
+    return true;
+  }catch(e){
+    localStorage.removeItem("sk_admin_token");
+    location.replace("login.html");
+    return false;
+  }
+}
 
 function todayZA(){
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -91,7 +106,10 @@ async function refresh(){
     $("#schedule").innerHTML='<div class="error">Could not refresh schedule. Retrying automatically…</div>';
   }
 }
-refresh();
-setInterval(()=>{if(!document.hidden)refresh()},10000);
+(async()=>{
+  if(!await requireAdminSession()) return;
+  await refresh();
+  setInterval(()=>{if(!document.hidden)refresh()},10000);
+})();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
 window.addEventListener("focus",refresh);
