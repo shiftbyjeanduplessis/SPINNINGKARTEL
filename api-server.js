@@ -520,6 +520,128 @@ async function handler(req, res) {
       },origin);
     }
 
+    if (req.method === 'GET' && path === '/api/admin/monthly-analytics') {
+      const requested=String(u.searchParams.get('month') || todayZA().slice(0,7));
+      if(!/^\d{4}-\d{2}$/.test(requested)) return json(res,400,{error:'invalid_month'},origin);
+
+      const today=todayZA();
+      const currentMonth=today.slice(0,7);
+      const monthStart=requested+'-01';
+      const nextMonthDate=new Date(monthStart+'T12:00:00Z');
+      nextMonthDate.setUTCMonth(nextMonthDate.getUTCMonth()+1);
+      const nextMonth=nextMonthDate.toISOString().slice(0,10);
+      const monthEnd=addDays(nextMonth,-1);
+      const studioOpen='2026-10-05';
+
+      let rangeStart=monthStart;
+      let rangeEnd=monthEnd;
+      if(requested===currentMonth && today<rangeEnd) rangeEnd=today;
+      if(requested>currentMonth) rangeEnd=addDays(monthStart,-1);
+      if(rangeStart<studioOpen) rangeStart=studioOpen;
+
+      if(rangeEnd<rangeStart){
+        return json(res,200,{
+          month:requested,
+          month_label:new Date(monthStart+'T12:00:00').toLocaleDateString('en-ZA',{month:'long',year:'numeric'}),
+          from:rangeStart,to:rangeEnd,
+          total_bookings:0,scheduled_classes:0,total_capacity:0,occupancy_pct:0,
+          avg_bookings_per_day:0,avg_bookings_per_class:0,
+          riders:0,no_shows:0,attendance_rate_pct:0,closed_classes:0,
+          daily:[],by_time:[]
+        },origin);
+      }
+
+      const dayCount=Math.round((new Date(rangeEnd+'T12:00:00Z')-new Date(rangeStart+'T12:00:00Z'))/86400000)+1;
+      const classes=await classRows(dayCount,rangeStart);
+
+      const attendanceQ=await pool.query(`
+        SELECT service_date::text AS service_date,
+               COUNT(*)::int AS closed_classes,
+               COALESCE(SUM(booked_count),0)::int AS booked,
+               COALESCE(SUM(attended_count),0)::int AS riders,
+               COALESCE(SUM(no_show_count),0)::int AS no_shows,
+               COALESCE(SUM(walkin_count),0)::int AS walkins
+        FROM sk_attendance
+        WHERE closed_at IS NOT NULL
+          AND service_date BETWEEN $1 AND $2
+        GROUP BY service_date
+        ORDER BY service_date
+      `,[rangeStart,rangeEnd]);
+      const attendanceByDate=new Map(attendanceQ.rows.map(r=>[String(r.service_date).slice(0,10),r]));
+
+      const dailyMap=new Map();
+      for(let i=0;i<dayCount;i++){
+        const date=addDays(rangeStart,i);
+        dailyMap.set(date,{
+          date,
+          label:new Date(date+'T12:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}),
+          day:new Date(date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short'}),
+          bookings:0,capacity:0,classes:0,occupancy_pct:0,avg_bookings_per_class:0,
+          riders:0,no_shows:0,walkins:0,closed_classes:0
+        });
+      }
+
+      const timeMap=new Map();
+      for(const c of classes){
+        const d=dailyMap.get(c.date);
+        if(d){
+          d.bookings+=Number(c.booked||0);
+          d.capacity+=Number(c.capacity||12);
+          d.classes+=1;
+        }
+        const t=timeMap.get(c.time)||{time:c.time,bookings:0,capacity:0,classes:0,occupancy_pct:0};
+        t.bookings+=Number(c.booked||0);
+        t.capacity+=Number(c.capacity||12);
+        t.classes+=1;
+        timeMap.set(c.time,t);
+      }
+
+      for(const [date,d] of dailyMap.entries()){
+        d.occupancy_pct=d.capacity?(d.bookings/d.capacity)*100:0;
+        d.avg_bookings_per_class=d.classes?d.bookings/d.classes:0;
+        const att=attendanceByDate.get(date);
+        if(att){
+          d.riders=Number(att.riders||0);
+          d.no_shows=Number(att.no_shows||0);
+          d.walkins=Number(att.walkins||0);
+          d.closed_classes=Number(att.closed_classes||0);
+        }
+      }
+
+      const daily=[...dailyMap.values()];
+      const byTime=[...timeMap.values()].map(t=>({
+        ...t,
+        occupancy_pct:t.capacity?(t.bookings/t.capacity)*100:0
+      })).sort((x,y)=>x.time.localeCompare(y.time));
+
+      const totalBookings=classes.reduce((s,c)=>s+Number(c.booked||0),0);
+      const totalCapacity=classes.reduce((s,c)=>s+Number(c.capacity||12),0);
+      const activeDays=daily.filter(d=>d.classes>0).length;
+      const riders=daily.reduce((s,d)=>s+d.riders,0);
+      const noShows=daily.reduce((s,d)=>s+d.no_shows,0);
+      const closedBooked=attendanceQ.rows.reduce((s,r)=>s+Number(r.booked||0),0);
+      const closedClasses=attendanceQ.rows.reduce((s,r)=>s+Number(r.closed_classes||0),0);
+
+      return json(res,200,{
+        month:requested,
+        month_label:new Date(monthStart+'T12:00:00').toLocaleDateString('en-ZA',{month:'long',year:'numeric'}),
+        from:rangeStart,
+        to:rangeEnd,
+        total_bookings:totalBookings,
+        scheduled_classes:classes.length,
+        total_capacity:totalCapacity,
+        occupancy_pct:totalCapacity?(totalBookings/totalCapacity)*100:0,
+        avg_bookings_per_day:activeDays?totalBookings/activeDays:0,
+        avg_bookings_per_class:classes.length?totalBookings/classes.length:0,
+        riders,
+        no_shows:noShows,
+        attendance_rate_pct:closedBooked?(riders/closedBooked)*100:0,
+        closed_classes:closedClasses,
+        daily,
+        by_time:byTime
+      },origin);
+    }
+
     if (req.method === 'GET' && path === '/api/admin/booking-weeks') {
       const weeks = Math.min(16, Math.max(1, Number(u.searchParams.get('weeks') || 8)));
       const currentStart = (() => {
