@@ -449,6 +449,77 @@ async function handler(req, res) {
       return json(res, 200, {instructor:q.rows[0] || null}, origin);
     }
 
+    if (req.method === 'GET' && path === '/api/admin/owner-insights') {
+      const now=todayZA();
+      const monthStart=now.slice(0,7)+'-01';
+      const nextMonthDate=new Date(monthStart+'T12:00:00Z');
+      nextMonthDate.setUTCMonth(nextMonthDate.getUTCMonth()+1);
+      const nextMonth=nextMonthDate.toISOString().slice(0,10);
+      const monthEnd=addDays(nextMonth,-1);
+      const days=Math.round((new Date(monthEnd+'T12:00:00Z')-new Date(monthStart+'T12:00:00Z'))/86400000)+1;
+      const classes=await classRows(days,monthStart);
+
+      const bookedClasses=classes.filter(c=>Number(c.booked||0)>0);
+      const totalBookings=bookedClasses.reduce((s,c)=>s+Number(c.booked||0),0);
+      const capacity=bookedClasses.reduce((s,c)=>s+Number(c.capacity||12),0);
+      const daysWithBookings=new Set(bookedClasses.map(c=>c.date)).size;
+      const busiest=bookedClasses.slice().sort((x,y)=>Number(y.booked||0)-Number(x.booked||0))[0]||null;
+
+      const attendanceQ=await pool.query(`
+        SELECT i.name,
+               COALESCE(SUM(a.attended_count),0)::int AS riders,
+               COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)::numeric
+                 + COALESCE(SUM(GREATEST(a.attended_count-5,0)*10),0)::numeric AS pay
+        FROM sk_attendance a
+        JOIN sk_instructors i ON i.id=a.instructor_id
+        WHERE a.closed_at IS NOT NULL
+          AND a.service_date >= $1
+          AND a.service_date < $2
+        GROUP BY i.name
+      `,[monthStart,nextMonth]);
+      const attendedByName=new Map(attendanceQ.rows.map(r=>[String(r.name).trim().toLowerCase(),r]));
+
+      const grouped=new Map();
+      for(const c of classes){
+        const name=String(c.instructor||'Instructor TBC').trim();
+        if(!name || name==='Instructor TBC') continue;
+        const g=grouped.get(name)||{name,classes:0,bookings:0,capacity:0};
+        g.classes+=1;
+        g.bookings+=Number(c.booked||0);
+        g.capacity+=Number(c.capacity||12);
+        grouped.set(name,g);
+      }
+      const instructors=[...grouped.values()].map(g=>{
+        const a=attendedByName.get(g.name.toLowerCase())||{};
+        return {
+          name:g.name,
+          classes:g.classes,
+          bookings:g.bookings,
+          avg_bookings_per_class:g.classes?g.bookings/g.classes:0,
+          occupancy_pct:g.capacity?(g.bookings/g.capacity)*100:0,
+          riders:Number(a.riders||0),
+          pay:Number(a.pay||0)
+        };
+      }).sort((x,y)=>y.bookings-x.bookings||x.name.localeCompare(y.name));
+
+      return json(res,200,{
+        month:monthStart.slice(0,7),
+        month_label:new Date(monthStart+'T12:00:00').toLocaleDateString('en-ZA',{month:'long',year:'numeric'}),
+        total_bookings:totalBookings,
+        avg_bookings_per_day:daysWithBookings?totalBookings/daysWithBookings:0,
+        avg_bookings_per_class:bookedClasses.length?totalBookings/bookedClasses.length:0,
+        occupancy_pct:capacity?(totalBookings/capacity)*100:0,
+        busiest_class:busiest?{
+          date:busiest.date,
+          day_label:new Date(busiest.date+'T12:00:00').toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'}),
+          time:busiest.time,
+          booked:Number(busiest.booked||0),
+          capacity:Number(busiest.capacity||12)
+        }:null,
+        instructors
+      },origin);
+    }
+
     if (req.method === 'GET' && path === '/api/admin/booking-weeks') {
       const weeks = Math.min(16, Math.max(1, Number(u.searchParams.get('weeks') || 8)));
       const currentStart = (() => {
