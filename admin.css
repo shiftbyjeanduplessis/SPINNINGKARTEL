@@ -257,3 +257,61 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   .instructor-month-head{display:block}
   .instructor-month-head>p{margin-top:8px}
 }
+
+
+/* Monthly analytics */
+.month-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.month-controls input[type="month"]{
+  min-height:34px;padding:0 10px;border:1px solid var(--line);border-radius:999px;
+  background:#fff;color:#111;font-size:10px;font-weight:850
+}
+.analytics-summary{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:17px
+}
+.analytics-summary article{
+  min-height:118px;padding:16px;border:1px solid var(--line);border-radius:15px;background:#fff
+}
+.analytics-summary span{
+  display:block;font-size:8px;font-weight:950;letter-spacing:.08em;color:var(--muted)
+}
+.analytics-summary strong{
+  display:block;margin-top:10px;font-size:30px;letter-spacing:-.045em
+}
+.analytics-summary small{
+  display:block;margin-top:7px;font-size:9px;line-height:1.4;color:var(--muted)
+}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+.analytics-panel{min-width:0}
+.month-chart{
+  min-height:240px;padding-top:8px;border-top:1px solid var(--line);overflow-x:auto
+}
+.month-bars{
+  min-width:max-content;height:210px;display:flex;align-items:flex-end;gap:7px;padding:8px 2px 0
+}
+.month-bar-item{
+  width:28px;display:grid;grid-template-rows:20px 160px 18px;gap:4px;text-align:center;align-items:end
+}
+.month-bar-value{
+  font-size:8px;font-weight:950;color:#555;white-space:nowrap
+}
+.month-bar-track{
+  position:relative;width:100%;height:160px;border-radius:7px 7px 3px 3px;background:#eeeae4;overflow:hidden
+}
+.month-bar-fill{
+  position:absolute;left:0;right:0;bottom:0;min-height:2px;border-radius:6px 6px 0 0;
+  background:linear-gradient(180deg,#176bff,#8b5cf6)
+}
+.month-bar-item strong{font-size:8px;color:#67635d;font-weight:850}
+.time-chart .month-bars{justify-content:flex-start;gap:14px}
+.time-chart .month-bar-item{width:58px}
+.chart-empty{padding:35px 4px}
+@media(max-width:1000px){
+  .analytics-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .analytics-page-head{display:block}
+  .month-controls{margin-top:14px}
+  .analytics-summary{grid-template-columns:1fr 1fr}
+  .analytics-summary article{min-height:104px;padding:13px}
+  .analytics-summary strong{font-size:25px}
+}
