@@ -171,3 +171,35 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   .pay-totals{grid-template-columns:1fr}
   .pay-history-row{grid-template-columns:1fr 1fr}
 }
+
+/* Weekly booking bar graph */
+.weekly-bookings-panel{overflow:hidden}
+.weekly-booking-summary{display:flex;align-items:baseline;gap:10px;margin:-8px 0 18px}
+.weekly-booking-summary strong{font-size:26px;letter-spacing:-.04em}
+.weekly-booking-summary span{font-size:10px;color:var(--muted)}
+.weekly-booking-chart{
+  min-height:230px;padding:12px 4px 2px;
+  display:flex;align-items:flex-end;gap:9px;
+  overflow-x:auto;border-top:1px solid var(--line)
+}
+.booking-bar-item{
+  flex:1 0 34px;min-width:34px;max-width:54px;
+  display:grid;grid-template-rows:20px 150px auto auto;gap:5px;text-align:center
+}
+.booking-bar-value{align-self:end;font-size:10px;font-weight:950;color:#111}
+.booking-bar-track{
+  position:relative;height:150px;border-radius:8px 8px 3px 3px;
+  background:#eeeae4;overflow:hidden;align-self:end
+}
+.booking-bar-fill{
+  position:absolute;left:0;right:0;bottom:0;
+  min-height:3px;border-radius:7px 7px 0 0;
+  background:linear-gradient(180deg,#176bff,#8b5cf6)
+}
+.booking-bar-item strong{font-size:8px;letter-spacing:.06em}
+.booking-bar-item span{font-size:8px;color:var(--muted)}
+.commission-preview{display:block!important;margin-top:4px;font-size:8px!important;font-weight:850;color:#176bff!important}
+@media(max-width:760px){
+  .weekly-booking-summary{display:grid;gap:3px}
+  .booking-bar-item{flex-basis:38px}
+}
