@@ -239,25 +239,30 @@ function renderAttendance(){
 }
 
 function renderPay(){
-  const classPay=state.pay.reduce((s,p)=>s+Number(p.class_pay||0),0);
+  const classes=state.pay.reduce((s,p)=>s+Number(p.classes||0),0);
+  const booked=state.pay.reduce((s,p)=>s+Number(p.booked||0),0);
   const commission=state.pay.reduce((s,p)=>s+Number(p.commission||0),0);
   const total=state.pay.reduce((s,p)=>s+Number(p.total||0),0);
 
   $("#payTotals").innerHTML=
-    '<article><span>CLASS PAY</span><strong>'+money(classPay)+'</strong></article>'+
+    '<article><span>CLASSES DONE</span><strong>'+classes+'</strong></article>'+
+    '<article><span>PEOPLE BOOKED</span><strong>'+booked+'</strong></article>'+
     '<article><span>COMMISSION</span><strong>'+money(commission)+'</strong></article>'+
     '<article><span>TOTAL PAYROLL</span><strong>'+money(total)+'</strong></article>';
 
   $("#paySummary").innerHTML=state.pay.length?state.pay.map(p=>'<article class="instructor-card pay-card">'+
-    '<strong>'+esc(p.name)+'</strong><span>'+roleLabel(p.role)+'</span>'+
-    '<span>'+p.classes+' closed classes · '+p.riders+' riders</span>'+
+    '<div class="pay-card-head"><div><strong>'+esc(p.name)+'</strong><span>'+roleLabel(p.role)+'</span></div><strong class="pay-card-total">'+money(p.total)+'</strong></div>'+
+    '<div class="pay-week-metrics">'+
+      '<div><span>Classes done</span><strong>'+Number(p.classes||0)+'</strong></div>'+
+      '<div><span>People booked</span><strong>'+Number(p.booked||0)+'</strong></div>'+
+    '</div>'+
     '<div class="pay-breakdown">'+
       '<div><span>Class pay</span><strong>'+money(p.class_pay)+'</strong></div>'+
-      '<div><span>Commission</span><strong>'+money(p.commission)+'</strong></div>'+
-      '<div class="pay-total-row"><span>Total</span><strong>'+money(p.total)+'</strong></div>'+
+      '<div><span>Commission earned</span><strong>'+money(p.commission)+'</strong></div>'+
+      '<div class="pay-total-row"><span>Total earned</span><strong>'+money(p.total)+'</strong></div>'+
     '</div>'+
     '<span class="pay-rate-note">'+money(p.base_pay)+' / class · '+money(p.commission_rate)+' / rider above 5</span>'+
-  '</article>').join(""):'<p class="muted">No instructor payroll records for this week.</p>';
+  '</article>').join(""):'<p class="muted">No completed instructor classes for this week.</p>';
 }
 
 function renderPayHistory(){
@@ -266,7 +271,7 @@ function renderPayHistory(){
   $("#payHistory").innerHTML=rows.length?rows.map(w=>{
     const end=addDays(w.week_start,6);
     return '<button class="pay-history-row" type="button" data-week="'+w.week_start+'">'+
-      '<div><strong>'+dateLabel(w.week_start)+' — '+dateLabel(end)+'</strong><span>'+w.classes+' classes · '+w.riders+' riders</span></div>'+
+      '<div><strong>'+dateLabel(w.week_start)+' — '+dateLabel(end)+'</strong><span>'+w.classes+' classes · '+Number(w.booked||0)+' booked</span></div>'+
       '<div><span>Class pay</span><strong>'+money(w.class_pay)+'</strong></div>'+
       '<div><span>Commission</span><strong>'+money(w.commission)+'</strong></div>'+
       '<div><span>Total</span><strong>'+money(w.total)+'</strong></div>'+
@@ -346,7 +351,7 @@ async function refreshMemberships(){
 }
 
 async function refreshAttendancePay(){
-  const from=state.payWeekStart||weekStart(today());
+  const from=state.payWeekStart||addDays(weekStart(today()),-7);
   const to=addDays(from,6);
   state.payWeekStart=from;
   const [classes,a,p,h]=await Promise.all([
