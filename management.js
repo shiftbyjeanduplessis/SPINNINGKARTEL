@@ -135,17 +135,15 @@ function classStatus(c){
 }
 
 function renderToday(){
+  const list=$("#todayClasses");
+  const actions=state.memberships.filter(m=>m.payment_status==="failed"||m.payment_status==="cancelled"||(m.payment_status==="paid"&&m.booklink_package_status!=="active")).length;
+  $("#metricMembershipActions").textContent=actions;
+
   if(!state.bookingSyncReliable){
     $("#metricClasses").textContent="—";
     $("#metricBookings").textContent="—";
     $("#metricUnassigned").textContent="—";
-    $("#metricMembershipActions").textContent=state.memberships.filter(m=>m.payment_status==="failed"||m.payment_status==="cancelled"||(m.payment_status==="paid"&&m.booklink_package_status!=="active")).length;
-    $("#todayClasses").innerHTML=
-      '<div class="integration-note">'+
-        '<strong>Booklink is the live booking source</strong>'+
-        '<span>Live booking sync has not yet received a confirmed Booklink booking, so counts are temporarily unavailable.</span>'+
-        '<a class="button" href="https://app.booklink.co.za/calendar" target="_blank" rel="noreferrer">OPEN LIVE BOOKLINK CALENDAR ↗</a>'+
-      '</div>';
+    if(list) list.innerHTML="";
     return;
   }
 
@@ -153,14 +151,7 @@ function renderToday(){
   $("#metricClasses").textContent=rows.length;
   $("#metricBookings").textContent=rows.reduce((s,c)=>s+Number(c.booked||0),0);
   $("#metricUnassigned").textContent=rows.filter(c=>!c.instructor_id).length;
-  $("#metricMembershipActions").textContent=state.memberships.filter(m=>m.payment_status==="failed"||m.payment_status==="cancelled"||(m.payment_status==="paid"&&m.booklink_package_status!=="active")).length;
-  $("#todayClasses").innerHTML=rows.length?rows.map(c=>'<article class="ops-row">'+
-    '<div class="ops-time"><strong>'+c.time+'</strong><span>'+dateLabel(c.date)+'</span></div>'+
-    '<div><strong>Spinning Class</strong><span>'+esc(c.instructor)+'</span></div>'+
-    '<div><strong>'+c.booked+' / '+c.capacity+'</strong><span>Booked seats</span></div>'+
-    '<div>'+classStatus(c)+'</div>'+
-    '<a class="mini primary" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">ROSTER ↗</a>'+
-  '</article>').join(""):'<p class="muted">No classes scheduled today.</p>';
+  if(list) list.innerHTML="";
 }
 
 function instructorOptions(selected){
