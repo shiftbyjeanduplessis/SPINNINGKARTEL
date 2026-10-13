@@ -449,6 +449,52 @@ async function handler(req, res) {
       return json(res, 200, {instructor:q.rows[0] || null}, origin);
     }
 
+    if (req.method === 'GET' && path === '/api/admin/booking-weeks') {
+      const weeks = Math.min(16, Math.max(1, Number(u.searchParams.get('weeks') || 8)));
+      const currentStart = (() => {
+        const t=todayZA();
+        const d=new Date(t+'T12:00:00Z');
+        const dow=d.getUTCDay();
+        d.setUTCDate(d.getUTCDate()-((dow+6)%7));
+        return d.toISOString().slice(0,10);
+      })();
+      const firstStart = addDays(currentStart, -(weeks-1)*7);
+      const endDate = addDays(currentStart, 6);
+
+      const q = await pool.query(`
+        SELECT service_date::text,
+               start_time::text,
+               booked_count::int,
+               capacity::int
+        FROM sk_session_stats
+        WHERE service_date BETWEEN $1 AND $2
+        ORDER BY service_date,start_time
+      `, [firstStart,endDate]);
+
+      const byWeek = new Map();
+      for(let i=0;i<weeks;i++){
+        const ws=addDays(firstStart,i*7);
+        byWeek.set(ws,{week_start:ws,bookings:0,classes:[]});
+      }
+      for(const row of q.rows){
+        const d=new Date(String(row.service_date).slice(0,10)+'T12:00:00Z');
+        const dow=d.getUTCDay();
+        d.setUTCDate(d.getUTCDate()-((dow+6)%7));
+        const ws=d.toISOString().slice(0,10);
+        if(!byWeek.has(ws)) continue;
+        const w=byWeek.get(ws);
+        const item={
+          date:String(row.service_date).slice(0,10),
+          time:String(row.start_time).slice(0,5),
+          booked:Number(row.booked_count||0),
+          capacity:Number(row.capacity||12)
+        };
+        w.bookings+=item.booked;
+        w.classes.push(item);
+      }
+      return json(res,200,{weeks:[...byWeek.values()]},origin);
+    }
+
     if (req.method === 'GET' && path === '/api/admin/classes') {
       const days = Math.min(35, Math.max(1, Number(u.searchParams.get('days') || 14)));
       return json(res, 200, {classes:await classRows(days, u.searchParams.get('from') || undefined)}, origin);
