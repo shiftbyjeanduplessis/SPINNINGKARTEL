@@ -43,6 +43,15 @@
         <article><span>Instructor TBC</span><strong id="metricUnassigned">0</strong></article>
         <article><span>Membership actions</span><strong id="metricMembershipActions">0</strong></article>
       </div>
+
+      <section class="panel weekly-bookings-panel">
+        <div class="panel-head">
+          <div><p class="eyebrow">THIS WEEK</p><h2>Class bookings</h2></div>
+          <p id="weeklyBookingLabel">Loading week…</p>
+        </div>
+        <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
+        <div id="weeklyBookingChart" class="weekly-booking-chart" aria-label="Weekly class bookings bar graph"></div>
+      </section>
       <section class="panel">
         <div class="panel-head"><div><p class="eyebrow">TODAY</p><h2>Class floor</h2></div><p>Booklink is the booking authority. Use the roster link whenever class sync is marked incomplete.</p></div>
         <div id="todayClasses" class="ops-list"></div>
@@ -67,8 +76,9 @@
       <div class="pay-rule">
         <span>Tammy: R200 / class</span>
         <span>Other instructors: R150 / class</span>
-        <span>+ R10 per attendee above 5</span>
-        <span>Actual attendance only</span>
+        <span>Commission = R10 × each rider above 5</span>
+        <span>Example: 8 riders = R30 commission</span>
+        <span>Actual attendance only · class must be closed</span>
       </div>
 
       <div class="pay-weekbar">
