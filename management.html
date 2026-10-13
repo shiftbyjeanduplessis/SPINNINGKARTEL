@@ -46,16 +46,24 @@
 
       <section class="panel weekly-bookings-panel">
         <div class="panel-head">
-          <div><p class="eyebrow">WEEKLY VIEW</p><h2>Bookings by week</h2></div>
-          <p id="weeklyBookingLabel">Last 8 weeks</p>
+          <div><p class="eyebrow">GROWTH</p><h2>Bookings by week</h2></div>
+          <p id="weeklyBookingLabel">Since opening</p>
         </div>
         <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
         <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
-        <div id="weeklyBookingDetails" class="weekly-booking-details"></div>
       </section>
-      <section class="panel">
-        <div class="panel-head"><div><p class="eyebrow">TODAY</p><h2>Class floor</h2></div><p>Booklink is the booking authority. Use the roster link whenever class sync is marked incomplete.</p></div>
-        <div id="todayClasses" class="ops-list"></div>
+
+      <section class="panel owner-insights-panel">
+        <div class="panel-head">
+          <div><p class="eyebrow">OWNER INSIGHTS</p><h2 id="ownerInsightTitle">This month</h2></div>
+          <p>Quick numbers for demand, class performance and instructors.</p>
+        </div>
+        <div id="ownerInsightCards" class="owner-insight-cards"></div>
+        <div class="instructor-month-head">
+          <div><p class="eyebrow">INSTRUCTORS</p><h3>Monthly performance</h3></div>
+          <p>Bookings are scheduled demand. Riders and pay use closed attendance only.</p>
+        </div>
+        <div id="instructorMonthTable" class="instructor-month-table"></div>
       </section>
     </section>
 
