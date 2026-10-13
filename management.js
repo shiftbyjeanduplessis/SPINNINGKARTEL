@@ -4,7 +4,7 @@ const TOKEN=localStorage.getItem("sk_admin_token");
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],weeklyClasses:[],bookingWeeks:[],ownerInsights:null,payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
+let state={classes:[],history:[],weeklyClasses:[],bookingWeeks:[],ownerInsights:null,monthlyAnalytics:null,analyticsMonth:today().slice(0,7),payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
@@ -109,6 +109,77 @@ async function refreshOwnerInsights(){
   renderOwnerInsights();
 }
 
+function shiftMonth(month,delta){
+  const d=new Date(month+"-01T12:00:00Z");
+  d.setUTCMonth(d.getUTCMonth()+delta);
+  return d.toISOString().slice(0,7);
+}
+
+function chartValueLabel(v,opts){
+  const n=Number(v||0);
+  if(opts.percent) return n.toFixed(0)+"%";
+  if(opts.decimals===1) return n.toFixed(1);
+  return Math.round(n).toString();
+}
+
+function renderMonthBarChart(id,rows,key,opts={}){
+  const el=$(id);
+  if(!el) return;
+  const data=(rows||[]).filter(r=>r!=null);
+  if(!data.length){
+    el.innerHTML='<p class="muted chart-empty">No data for this month yet.</p>';
+    return;
+  }
+  const values=data.map(r=>Number(r[key]||0));
+  const max=opts.max!=null?Number(opts.max):Math.max(1,...values);
+  el.innerHTML='<div class="month-bars">'+data.map(r=>{
+    const value=Number(r[key]||0);
+    const height=max>0?Math.max(value>0?4:1,Math.min(100,value/max*100)):1;
+    const label=opts.labelKey?r[opts.labelKey]:(r.date?String(Number(r.date.slice(-2))):"");
+    const detail=(opts.tooltipPrefix||"")+chartValueLabel(value,opts)+(opts.tooltipSuffix||"");
+    return '<div class="month-bar-item" title="'+esc((r.label||label)+" · "+detail)+'">'+
+      '<div class="month-bar-value">'+chartValueLabel(value,opts)+'</div>'+
+      '<div class="month-bar-track"><div class="month-bar-fill" style="height:'+height.toFixed(1)+'%"></div></div>'+
+      '<strong>'+esc(label)+'</strong>'+
+    '</div>';
+  }).join("")+'</div>';
+}
+
+function renderMonthlyAnalytics(){
+  const d=state.monthlyAnalytics;
+  if(!d) return;
+
+  const monthInput=$("#analyticsMonth");
+  if(monthInput){
+    monthInput.value=state.analyticsMonth;
+    monthInput.max=today().slice(0,7);
+  }
+  const next=$("#analyticsNextMonth");
+  if(next) next.disabled=state.analyticsMonth>=today().slice(0,7);
+
+  $("#analyticsTotalBookings").textContent=Number(d.total_bookings||0);
+  $("#analyticsOccupancy").textContent=pct(d.occupancy_pct);
+  $("#analyticsAvgDay").textContent=Number(d.avg_bookings_per_day||0).toFixed(1);
+  $("#analyticsAvgClass").textContent=Number(d.avg_bookings_per_class||0).toFixed(1);
+  $("#analyticsRiders").textContent=Number(d.riders||0);
+  $("#analyticsNoShows").textContent=Number(d.no_shows||0);
+  $("#analyticsRangeLabel").textContent=(d.month_label||state.analyticsMonth)+" · "+Number(d.scheduled_classes||0)+" scheduled classes";
+  $("#analyticsAttendanceNote").textContent=Number(d.closed_classes||0)+" closed classes · "+pct(d.attendance_rate_pct)+" attendance";
+
+  renderMonthBarChart("#chartBookingsDay",d.daily,"bookings",{});
+  renderMonthBarChart("#chartOccupancyDay",d.daily,"occupancy_pct",{percent:true,max:100});
+  renderMonthBarChart("#chartAvgClassDay",d.daily,"avg_bookings_per_class",{decimals:1,max:12});
+  renderMonthBarChart("#chartRidersDay",d.daily,"riders",{});
+  renderMonthBarChart("#chartNoShowsDay",d.daily,"no_shows",{});
+  renderMonthBarChart("#chartBookingsTime",d.by_time,"bookings",{labelKey:"time"});
+}
+
+async function refreshMonthlyAnalytics(){
+  const d=await api("/api/admin/monthly-analytics?month="+encodeURIComponent(state.analyticsMonth));
+  state.monthlyAnalytics=d;
+  renderMonthlyAnalytics();
+}
+
 async function api(path,options={}){
   const headers={...(options.headers||{}),"authorization":"Bearer "+TOKEN};
   if(options.body && !headers["content-type"]) headers["content-type"]="application/json";
@@ -123,7 +194,12 @@ function showView(name){
   qsa(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));
   qsa(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
 }
-qsa(".nav").forEach(n=>n.onclick=()=>showView(n.dataset.view));
+qsa(".nav").forEach(n=>n.onclick=async()=>{
+  showView(n.dataset.view);
+  if(n.dataset.view==="analytics" && !state.monthlyAnalytics){
+    try{await refreshMonthlyAnalytics();}catch(e){toast(e.message);}
+  }
+});
 $("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html";};
 qsa("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
 qsa("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
@@ -407,6 +483,23 @@ $("#memberForm").onsubmit=async e=>{
   }catch(err){toast(err.message);}
 };
 
+$("#analyticsPrevMonth").onclick=async()=>{
+  state.analyticsMonth=shiftMonth(state.analyticsMonth,-1);
+  try{await refreshMonthlyAnalytics();}catch(e){toast(e.message);}
+};
+$("#analyticsNextMonth").onclick=async()=>{
+  const next=shiftMonth(state.analyticsMonth,1);
+  if(next>today().slice(0,7)) return;
+  state.analyticsMonth=next;
+  try{await refreshMonthlyAnalytics();}catch(e){toast(e.message);}
+};
+$("#analyticsMonth").onchange=async e=>{
+  if(!e.target.value) return;
+  const current=today().slice(0,7);
+  state.analyticsMonth=e.target.value>current?current:e.target.value;
+  try{await refreshMonthlyAnalytics();}catch(err){toast(err.message);}
+};
+
 $("#payPrevWeek").onclick=async()=>{state.payWeekStart=addDays(state.payWeekStart||weekStart(today()),-7);await refreshAttendancePay();};
 $("#payThisWeek").onclick=async()=>{state.payWeekStart=weekStart(today());await refreshAttendancePay();};
 
@@ -433,7 +526,7 @@ async function boot(){
     const [i,m]=await Promise.all([api("/api/admin/instructors"),api("/api/admin/memberships")]);
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
-    await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshOwnerInsights(),refreshAttendancePay(),refreshWebhooks()]);
+    await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshOwnerInsights(),refreshMonthlyAnalytics(),refreshAttendancePay(),refreshWebhooks()]);
     document.body.classList.remove("admin-auth-locked");
   }catch(e){
     // Security-first: never reveal the management interface unless authentication
