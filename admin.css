@@ -172,32 +172,47 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   .pay-history-row{grid-template-columns:1fr 1fr}
 }
 
-/* Weekly booking bar graph */
+/* Weekly booking graph */
 .weekly-bookings-panel{overflow:hidden}
 .weekly-booking-summary{display:flex;align-items:baseline;gap:10px;margin:-8px 0 18px}
 .weekly-booking-summary strong{font-size:26px;letter-spacing:-.04em}
 .weekly-booking-summary span{font-size:10px;color:var(--muted)}
 .weekly-booking-chart{
-  min-height:230px;padding:12px 4px 2px;
-  display:flex;align-items:flex-end;gap:9px;
+  min-height:230px;padding:12px 4px 14px;
+  display:flex;align-items:flex-end;gap:14px;
   overflow-x:auto;border-top:1px solid var(--line)
 }
-.booking-bar-item{
-  flex:1 0 34px;min-width:34px;max-width:54px;
-  display:grid;grid-template-rows:20px 150px auto auto;gap:5px;text-align:center
+.week-bar-item{
+  appearance:none;border:0;background:transparent;color:#111;cursor:pointer;
+  flex:1 0 64px;min-width:64px;max-width:100px;
+  display:grid;grid-template-rows:22px 150px auto auto;gap:5px;text-align:center;padding:0
 }
-.booking-bar-value{align-self:end;font-size:10px;font-weight:950;color:#111}
-.booking-bar-track{
-  position:relative;height:150px;border-radius:8px 8px 3px 3px;
-  background:#eeeae4;overflow:hidden;align-self:end
+.week-bar-value{align-self:end;font-size:12px;font-weight:950;color:#111}
+.week-bar-track{position:relative;height:150px;border-radius:9px 9px 3px 3px;background:#eeeae4;overflow:hidden;align-self:end}
+.week-bar-fill{position:absolute;left:0;right:0;bottom:0;min-height:3px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#176bff,#8b5cf6)}
+.week-bar-item.current .week-bar-track{box-shadow:0 0 0 2px rgba(23,107,255,.18)}
+.week-bar-item strong{font-size:9px;letter-spacing:.04em}
+.week-bar-item span{font-size:8px;color:var(--muted)}
+.weekly-booking-details{display:grid;gap:8px;margin-top:8px}
+.week-detail{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.week-detail summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:14px 16px}
+.week-detail summary::-webkit-details-marker{display:none}
+.week-detail summary>div{display:grid;gap:3px}
+.week-detail summary strong{font-size:12px}
+.week-detail summary span{font-size:10px;color:var(--muted)}
+.week-detail summary b{font-size:8px;letter-spacing:.08em;color:#176bff}
+.week-detail[open] summary{border-bottom:1px solid var(--line)}
+.week-detail-rows{display:grid}
+.week-detail-row{display:grid;grid-template-columns:1.4fr .6fr 1fr;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid rgba(0,0,0,.06)}
+.week-detail-row:first-child{border-top:0}
+.week-detail-row span{font-size:10px;color:var(--muted)}
+.week-detail-row strong{font-size:11px}
+@media(max-width:760px){
+  .weekly-booking-summary{display:grid;gap:3px}
+  .week-bar-item{flex-basis:58px;min-width:58px}
+  .week-detail-row{grid-template-columns:1fr auto}
+  .week-detail-row span:last-child{grid-column:1/-1}
 }
-.booking-bar-fill{
-  position:absolute;left:0;right:0;bottom:0;
-  min-height:3px;border-radius:7px 7px 0 0;
-  background:linear-gradient(180deg,#176bff,#8b5cf6)
-}
-.booking-bar-item strong{font-size:8px;letter-spacing:.06em}
-.booking-bar-item span{font-size:8px;color:var(--muted)}
 .commission-preview{display:block!important;margin-top:4px;font-size:8px!important;font-weight:850;color:#176bff!important}
 @media(max-width:760px){
   .weekly-booking-summary{display:grid;gap:3px}
