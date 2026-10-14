@@ -139,9 +139,9 @@ function statusFor(booked, capacity) {
 
 function defaultInstructorFor(weekday, time) {
   const map = {
-    '1|05:30':['Tammy',''], '1|08:00':['Tammy',''], '1|17:00':['Conraad',''], '1|18:00':['Tammy',''], '1|19:00':['Tammy','If booked'],
-    '2|05:30':['Tammy',''], '2|08:00':['Tammy',''], '2|17:00':['Conraad',''], '2|18:00':['Tammy',''], '2|19:00':['Demi',''],
-    '3|05:30':['Tammy','Team Build'], '3|08:00':['Tammy',''], '3|17:00':['Elzet',''], '3|18:00':['Conraad',''], '3|19:00':['Robbie',''],
+    '1|05:30':['Tammy',''], '1|08:00':['Tammy',''], '1|17:00':['Conrad',''], '1|18:00':['Tammy',''], '1|19:00':['Tammy','If booked'],
+    '2|05:30':['Tammy',''], '2|08:00':['Tammy',''], '2|17:00':['Conrad',''], '2|18:00':['Tammy',''], '2|19:00':['Demi',''],
+    '3|05:30':['Tammy','Team Build'], '3|08:00':['Tammy',''], '3|17:00':['Elzet',''], '3|18:00':['Conrad',''], '3|19:00':['Robbie',''],
     '4|05:30':['Demi',''], '4|08:00':['Tammy',''], '4|17:00':['Tammy','Team Build'], '4|18:00':['Tammy','Team Build'], '4|19:00':['Tammy','Team Build'],
     '5|05:30':['Robbie',''], '5|08:00':['Tammy',''], '5|17:00':['Elzet',''], '5|18:00':['Tammy',''],
     '6|07:00':['Tammy',''], '6|08:00':['Instructor TBC','Based on bookings']
@@ -156,7 +156,7 @@ async function classRows(days, startDate) {
   for (let i = 0; i < days; i++) dates.push(addDays(from, i));
   const to = dates[dates.length - 1];
 
-  const [slotsQ, rotaQ, statsQ] = await Promise.all([
+  const [slotsQ, rotaQ, statsQ, instructorsQ] = await Promise.all([
     pool.query("SELECT weekday,start_time::text,duration_minutes,capacity FROM sk_weekly_slots WHERE active=true ORDER BY weekday,start_time"),
     pool.query(`
       SELECT r.service_date::text, r.start_time::text, r.instructor_id, r.note, i.name AS instructor_name
@@ -168,11 +168,13 @@ async function classRows(days, startDate) {
       SELECT service_date::text,start_time::text,booked_count,capacity
       FROM sk_session_stats
       WHERE service_date BETWEEN $1 AND $2
-    `, [from, to])
+    `, [from, to]),
+    pool.query("SELECT id,name FROM sk_instructors WHERE active=true")
   ]);
 
   const rota = new Map(rotaQ.rows.map(r => [r.service_date + '|' + r.start_time.slice(0,5), r]));
   const stats = new Map(statsQ.rows.map(r => [r.service_date + '|' + r.start_time.slice(0,5), r]));
+  const instructorByName = new Map(instructorsQ.rows.map(r => [String(r.name||'').trim().toLowerCase(), r]));
   const slotsByDay = new Map();
   for (const s of slotsQ.rows) {
     const arr = slotsByDay.get(Number(s.weekday)) || [];
@@ -191,6 +193,7 @@ async function classRows(days, startDate) {
       const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
       const booked = Number(ss?.booked_count ?? 0);
       const def = defaultInstructorFor(wd, time);
+      const defInstructor = instructorByName.get(String(def.name||'').trim().toLowerCase()) || null;
       rows.push({
         id: date + '_' + time.replace(':',''),
         date,
@@ -200,8 +203,8 @@ async function classRows(days, startDate) {
         capacity,
         booked,
         status: statusFor(booked, capacity),
-        instructor_id: rr?.instructor_id || null,
-        instructor: rr?.instructor_name || def.name || 'Instructor TBC',
+        instructor_id: rr?.instructor_id || defInstructor?.id || null,
+        instructor: rr?.instructor_name || defInstructor?.name || def.name || 'Instructor TBC',
         instructor_note: rr?.note || def.note || null
       });
     }
@@ -741,26 +744,95 @@ async function handler(req, res) {
     if (req.method === 'GET' && path === '/api/admin/pay') {
       const from = u.searchParams.get('from') || addDays(todayZA(), -6);
       const to = u.searchParams.get('to') || todayZA();
-      const q = await pool.query(`
-        SELECT i.id,i.name,i.role,
-               CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END::numeric AS base_pay,
-               10::numeric AS commission_rate,
-               COUNT(a.*)::int AS classes,
-               COALESCE(SUM(a.booked_count),0)::int AS booked,
-               COALESCE(SUM(a.attended_count),0)::int AS riders,
-               (COUNT(a.*) * CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END)::numeric AS class_pay,
-               COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
-               ((COUNT(a.*) * CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END)
-                 + COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0))::numeric AS total
-        FROM sk_instructors i
-        LEFT JOIN sk_attendance a
-          ON a.instructor_id=i.id
-         AND a.closed_at IS NOT NULL
-         AND a.service_date BETWEEN $1 AND $2
-        GROUP BY i.id
-        ORDER BY i.name
-      `,[from,to]);
-      return json(res, 200, {from,to,pay:q.rows}, origin);
+      const dayCount=Math.max(1,Math.round((new Date(to+'T12:00:00Z')-new Date(from+'T12:00:00Z'))/86400000)+1);
+
+      const [classes,attendanceQ,instructorsQ]=await Promise.all([
+        classRows(dayCount,from),
+        pool.query(`
+          SELECT a.*,i.name AS instructor_name
+          FROM sk_attendance a
+          LEFT JOIN sk_instructors i ON i.id=a.instructor_id
+          WHERE a.closed_at IS NOT NULL
+            AND a.service_date BETWEEN $1 AND $2
+        `,[from,to]),
+        pool.query("SELECT id,name,role FROM sk_instructors WHERE active=true ORDER BY name")
+      ]);
+
+      const closedByClass=new Map(attendanceQ.rows.map(a=>[
+        String(a.service_date).slice(0,10)+'|'+String(a.start_time).slice(0,5),a
+      ]));
+      const instructorsById=new Map(instructorsQ.rows.map(i=>[String(i.id),i]));
+      const instructorsByName=new Map(instructorsQ.rows.map(i=>[String(i.name||'').trim().toLowerCase(),i]));
+      const now=localDateTime(new Date().toISOString());
+      const nowKey=now.date+'|'+now.time;
+
+      const rows=new Map();
+      function ensureInstructor(i,name){
+        const key=String(i?.id||name||'').toLowerCase();
+        if(!rows.has(key)){
+          const displayName=i?.name||name||'Instructor';
+          const basePay=String(displayName).trim().toLowerCase()==='tammy'?200:150;
+          rows.set(key,{
+            id:i?.id||null,
+            name:displayName,
+            role:i?.role||'main',
+            base_pay:basePay,
+            commission_rate:10,
+            classes:0,
+            booked:0,
+            riders:0,
+            closed_classes:0,
+            pending_classes:0,
+            class_pay:0,
+            commission:0,
+            total:0,
+            actual_total:0
+          });
+        }
+        return rows.get(key);
+      }
+
+      for(const c of classes){
+        const classKey=c.date+'|'+c.time;
+        if(classKey>nowKey) continue;
+        const name=String(c.instructor||'').trim();
+        if(!name || name==='Instructor TBC') continue;
+
+        const instructor=instructorsById.get(String(c.instructor_id||'')) ||
+          instructorsByName.get(name.toLowerCase()) || null;
+        const row=ensureInstructor(instructor,name);
+        const closed=closedByClass.get(classKey);
+        const basePay=Number(row.base_pay||0);
+        const booked=Number(c.booked||0);
+
+        row.classes+=1;
+        row.booked+=booked;
+        row.class_pay+=basePay;
+
+        if(closed){
+          const riders=Number(closed.attended_count||0);
+          const commission=Math.max(0,riders-5)*10;
+          row.closed_classes+=1;
+          row.riders+=riders;
+          row.commission+=commission;
+          row.actual_total+=basePay+commission;
+        }else{
+          // Until attendance is closed, use booked seats only as a clearly-labelled estimate.
+          const estimatedCommission=Math.max(0,booked-5)*10;
+          row.pending_classes+=1;
+          row.commission+=estimatedCommission;
+        }
+      }
+
+      const pay=[...rows.values()]
+        .map(r=>({...r,total:Number(r.class_pay)+Number(r.commission)}))
+        .filter(r=>r.classes>0)
+        .sort((x,y)=>x.name.localeCompare(y.name));
+
+      return json(res, 200, {
+        from,to,pay,
+        provisional:pay.some(r=>Number(r.pending_classes||0)>0)
+      }, origin);
     }
 
     if (req.method === 'GET' && path === '/api/admin/pay-history') {
