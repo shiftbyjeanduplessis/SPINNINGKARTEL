@@ -301,7 +301,7 @@ function renderAttendance(){
       '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(c.instructor)+'</span></div>'+
       '<div><strong>'+c.booked+'</strong><span>Booked</span></div>'+
       '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="12" value="'+c.booked+'"><span class="commission-preview" data-preview="'+key+'">Commission if closed: '+money(commissionFor(c.booked))+'</span></label>'+
-      '<button class="mini primary close-class" data-date="'+c.date+'" data-time="'+c.time+'" '+(!c.instructor_id?'disabled title="Assign an instructor first"':'')+'>CLOSE CLASS</button>'+
+      '<button class="mini primary close-class" data-date="'+c.date+'" data-time="'+c.time+'" data-instructor-id="'+esc(c.instructor_id||'')+'" '+(!c.instructor_id?'disabled title="Assign an instructor first"':'')+'>CLOSE CLASS</button>'+
     '</div>';
   }).join(""):'<p class="muted">No classes to close yet.</p>';
 
@@ -314,7 +314,7 @@ function renderAttendance(){
     const key=b.dataset.date+"|"+b.dataset.time;
     const inp=document.querySelector('.attendance-input[data-key="'+key+'"]');
     try{
-      await api("/api/admin/attendance",{method:"POST",body:JSON.stringify({date:b.dataset.date,time:b.dataset.time,attended_count:Number(inp.value||0)})});
+      await api("/api/admin/attendance",{method:"POST",body:JSON.stringify({date:b.dataset.date,time:b.dataset.time,instructor_id:b.dataset.instructorId||null,attended_count:Number(inp.value||0)})});
       toast("Attendance closed.");
       await refreshAttendancePay();
     }catch(e){toast(e.message);}
@@ -326,12 +326,14 @@ function renderPay(){
   const booked=state.pay.reduce((s,p)=>s+Number(p.booked||0),0);
   const commission=state.pay.reduce((s,p)=>s+Number(p.commission||0),0);
   const total=state.pay.reduce((s,p)=>s+Number(p.total||0),0);
+  const pending=state.pay.reduce((s,p)=>s+Number(p.pending_classes||0),0);
+  const provisional=pending>0;
 
   $("#payTotals").innerHTML=
     '<article><span>CLASSES DONE</span><strong>'+classes+'</strong></article>'+
     '<article><span>PEOPLE BOOKED</span><strong>'+booked+'</strong></article>'+
-    '<article><span>COMMISSION</span><strong>'+money(commission)+'</strong></article>'+
-    '<article><span>TOTAL PAYROLL</span><strong>'+money(total)+'</strong></article>';
+    '<article><span>'+(provisional?'EST. COMMISSION':'COMMISSION')+'</span><strong>'+money(commission)+'</strong></article>'+
+    '<article><span>'+(provisional?'EST. TOTAL PAYROLL':'TOTAL PAYROLL')+'</span><strong>'+money(total)+'</strong></article>';
 
   $("#paySummary").innerHTML=state.pay.length?state.pay.map(p=>'<article class="instructor-card pay-card">'+
     '<div class="pay-card-head"><div><strong>'+esc(p.name)+'</strong><span>'+roleLabel(p.role)+'</span></div><strong class="pay-card-total">'+money(p.total)+'</strong></div>'+
@@ -344,7 +346,9 @@ function renderPay(){
       '<div><span>Commission earned</span><strong>'+money(p.commission)+'</strong></div>'+
       '<div class="pay-total-row"><span>Total earned</span><strong>'+money(p.total)+'</strong></div>'+
     '</div>'+
-    '<span class="pay-rate-note">'+money(p.base_pay)+' / class · '+money(p.commission_rate)+' / rider above 5</span>'+
+    '<span class="pay-rate-note">'+money(p.base_pay)+' / class · '+money(p.commission_rate)+' / rider above 5'+
+      (Number(p.pending_classes||0)>0?' · '+Number(p.pending_classes||0)+' class'+(Number(p.pending_classes||0)===1?'':'es')+' awaiting attendance — commission estimated from bookings':' · attendance closed')+
+    '</span>'+
   '</article>').join(""):'<p class="muted">No completed instructor classes for this week.</p>';
 }
 
@@ -434,7 +438,7 @@ async function refreshMemberships(){
 }
 
 async function refreshAttendancePay(){
-  const from=state.payWeekStart||addDays(weekStart(today()),-7);
+  const from=state.payWeekStart||weekStart(today());
   const to=addDays(from,6);
   state.payWeekStart=from;
   const [classes,a,p,h]=await Promise.all([
