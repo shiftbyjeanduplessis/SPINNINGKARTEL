@@ -20,7 +20,8 @@ function scheduleStartDate(){
 function prettyDate(date){
   return new Date(date+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
 }
-function rideName(time){
+function rideName(time,label){
+  if(label)return label;
   if(time==="05:30")return"Early Ride";
   if(time==="08:00")return"Morning Ride";
   if(time==="17:00")return"Afternoon Ride";
@@ -57,7 +58,7 @@ function quickCard(c){
     '<span class="quick-status '+s.cls+'">'+s.label+'</span>'+
     '<small>'+prettyDate(c.date)+'</small>'+
     '<strong>'+esc(c.time)+'</strong>'+
-    '<p class="class-meta">'+esc(rideName(c.time))+' · 45 min · R70</p>'+
+    '<p class="class-meta">'+esc(rideName(c.time,c.class_label))+' · 45 min · R70</p>'+
     '<p class="class-instructor">'+instructorLine(c)+'</p>'+
     (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
@@ -67,7 +68,7 @@ function fullCard(c){
   const statusText=s.label==="OPEN"?"BOOK":s.label;
   return '<article class="full-class '+s.cls+'">'+
     '<div class="time">'+esc(c.time)+'</div>'+
-    '<div class="desc"><strong>'+esc(c.instructor||"Instructor TBC")+'</strong><span>'+esc(rideName(c.time))+' · 45 min · R70'+(c.instructor_note?' · '+esc(c.instructor_note):'')+'</span></div>'+
+    '<div class="desc"><strong>'+esc(c.instructor||"Instructor TBC")+'</strong><span>'+esc(rideName(c.time,c.class_label))+' · 45 min · R70'+(c.instructor_note?' · '+esc(c.instructor_note):'')+'</span></div>'+
     '<div class="book">'+statusText+'</div>'+
     (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
