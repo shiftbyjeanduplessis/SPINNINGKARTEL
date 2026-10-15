@@ -1,5 +1,6 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
+const TOKEN=localStorage.getItem("sk_admin_token");
 const $=s=>document.querySelector(s);
 function todayZA(){
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -90,7 +91,25 @@ async function refresh(){
     $("#schedule").innerHTML='<div class="error">Could not refresh schedule. Retrying automatically…</div>';
   }
 }
-refresh();
-setInterval(()=>{if(!document.hidden)refresh()},10000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
-window.addEventListener("focus",refresh);
+async function boot(){
+  if(!TOKEN){
+    location.replace("login.html");
+    return;
+  }
+  try{
+    const auth=await fetch(API+"/api/admin/session",{
+      headers:{"authorization":"Bearer "+TOKEN},
+      cache:"no-store"
+    });
+    if(!auth.ok) throw new Error("unauthorized");
+    document.body.classList.remove("admin-auth-locked");
+    await refresh();
+    setInterval(()=>{if(!document.hidden)refresh()},10000);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+    window.addEventListener("focus",refresh);
+  }catch(e){
+    localStorage.removeItem("sk_admin_token");
+    location.replace("login.html");
+  }
+}
+boot();
