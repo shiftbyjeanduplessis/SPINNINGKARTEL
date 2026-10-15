@@ -13,19 +13,45 @@ function safeNext(value){
 }
 const NEXT=safeNext(requestedNext);
 
+function readAdminToken(){
+  try { const token=localStorage.getItem("sk_admin_token"); if(token) return token; } catch(e) {}
+  try { return sessionStorage.getItem("sk_admin_token"); } catch(e) { return null; }
+}
+function clearAdminToken(){
+  try { localStorage.removeItem("sk_admin_token"); } catch(e) {}
+  try { sessionStorage.removeItem("sk_admin_token"); } catch(e) {}
+}
+function rememberAdminToken(token){
+  if(!token) throw new Error("The server did not return a login session.");
+  try {
+    localStorage.setItem("sk_admin_token",token);
+    if(localStorage.getItem("sk_admin_token")===token) return;
+  } catch(e) {}
+  // Some mobile/private browsers block persistent storage but allow tab storage.
+  try {
+    sessionStorage.setItem("sk_admin_token",token);
+    if(sessionStorage.getItem("sk_admin_token")===token) return;
+  } catch(e) {}
+  throw new Error("Browser storage is blocked. Open this site in Safari or Chrome and allow site data.");
+}
 async function validateSavedSession(){
-  const token=localStorage.getItem("sk_admin_token");
+  const token=readAdminToken();
   if(!token) return false;
   try{
     const r=await fetch(API+"/api/admin/session",{
       headers:{"authorization":"Bearer "+token},
       cache:"no-store"
     });
-    if(!r.ok) throw new Error("invalid");
+    if(r.status===401 || r.status===403){
+      clearAdminToken();
+      return false;
+    }
+    if(!r.ok) throw new Error("Session service unavailable");
     location.replace(NEXT);
     return true;
   }catch(e){
-    localStorage.removeItem("sk_admin_token");
+    // Connection failures must not erase a valid remembered login.
+    msg.textContent="Could not verify your saved session. Please retry if needed.";
     return false;
   }
 }
@@ -45,9 +71,9 @@ form.addEventListener("submit",async e=>{
     if(!r.ok) throw new Error(
       data.error==="too_many_attempts"
         ?"Too many attempts. Try again in 15 minutes."
-        :"Incorrect password."
+        :r.status===401 ? "Incorrect password." : "Login service unavailable. Try again."
     );
-    localStorage.setItem("sk_admin_token",data.token);
+    rememberAdminToken(data.token);
     passwordInput.value="";
     location.replace(NEXT);
   }catch(err){
