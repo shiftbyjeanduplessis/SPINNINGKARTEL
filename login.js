@@ -4,7 +4,9 @@ const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
 const passwordInput=document.querySelector("#adminPassword");
 const params=new URLSearchParams(location.search);
-const NEXT="management.html";
+const allowedNext=new Set(["management.html","instructors.html"]);
+const requestedNext=params.get("next")||"management.html";
+const NEXT=allowedNext.has(requestedNext)?requestedNext:"management.html";
 
 async function validateSavedSession(){
   const token=localStorage.getItem("sk_admin_token");
