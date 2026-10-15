@@ -156,7 +156,7 @@ async function classRows(days, startDate) {
   for (let i = 0; i < days; i++) dates.push(addDays(from, i));
   const to = dates[dates.length - 1];
 
-  const [slotsQ, rotaQ, statsQ, instructorsQ] = await Promise.all([
+  const [slotsQ, rotaQ, statsQ, instructorsQ, specialsQ] = await Promise.all([
     pool.query("SELECT weekday,start_time::text,duration_minutes,capacity FROM sk_weekly_slots WHERE active=true ORDER BY weekday,start_time"),
     pool.query(`
       SELECT r.service_date::text, r.start_time::text, r.instructor_id, r.note, i.name AS instructor_name
@@ -169,7 +169,13 @@ async function classRows(days, startDate) {
       FROM sk_session_stats
       WHERE service_date BETWEEN $1 AND $2
     `, [from, to]),
-    pool.query("SELECT id,name FROM sk_instructors WHERE active=true")
+    pool.query("SELECT id,name FROM sk_instructors WHERE active=true"),
+    pool.query(`
+      SELECT service_date::text,start_time::text,duration_minutes,capacity,label
+      FROM sk_special_sessions
+      WHERE active=true AND service_date BETWEEN $1 AND $2
+      ORDER BY service_date,start_time
+    `, [from, to])
   ]);
 
   const rota = new Map(rotaQ.rows.map(r => [r.service_date + '|' + r.start_time.slice(0,5), r]));
@@ -181,19 +187,29 @@ async function classRows(days, startDate) {
     arr.push(s);
     slotsByDay.set(Number(s.weekday), arr);
   }
+  const specialsByDate = new Map();
+  for (const s of specialsQ.rows) {
+    const arr = specialsByDate.get(s.service_date) || [];
+    arr.push(s);
+    specialsByDate.set(s.service_date, arr);
+  }
 
   const rows = [];
   for (const date of dates) {
     const wd = isoWeekday(date);
+    const seen = new Set();
+
     for (const s of (slotsByDay.get(wd) || [])) {
       const time = s.start_time.slice(0,5);
       const key = date + '|' + time;
+      seen.add(time);
       const rr = rota.get(key);
       const ss = stats.get(key);
       const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
       const booked = Number(ss?.booked_count ?? 0);
       const def = defaultInstructorFor(wd, time);
       const defInstructor = instructorByName.get(String(def.name||'').trim().toLowerCase()) || null;
+      const hasRota = Boolean(rr);
       rows.push({
         id: date + '_' + time.replace(':',''),
         date,
@@ -203,12 +219,38 @@ async function classRows(days, startDate) {
         capacity,
         booked,
         status: statusFor(booked, capacity),
-        instructor_id: rr?.instructor_id || defInstructor?.id || null,
-        instructor: rr?.instructor_name || defInstructor?.name || def.name || 'Instructor TBC',
-        instructor_note: rr?.note || def.note || null
+        instructor_id: hasRota ? (rr.instructor_id || null) : (defInstructor?.id || null),
+        instructor: hasRota ? (rr.instructor_name || 'Instructor TBC') : (defInstructor?.name || def.name || 'Instructor TBC'),
+        instructor_note: hasRota ? (rr.note || null) : (def.note || null),
+        class_label: null
+      });
+    }
+
+    for (const s of (specialsByDate.get(date) || [])) {
+      const time = s.start_time.slice(0,5);
+      if (seen.has(time)) continue;
+      const key = date + '|' + time;
+      const rr = rota.get(key);
+      const ss = stats.get(key);
+      const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
+      const booked = Number(ss?.booked_count ?? 0);
+      rows.push({
+        id: date + '_' + time.replace(':',''),
+        date,
+        time,
+        duration: Number(s.duration_minutes || 45),
+        rate: 70,
+        capacity,
+        booked,
+        status: statusFor(booked, capacity),
+        instructor_id: rr?.instructor_id || null,
+        instructor: rr?.instructor_name || 'Instructor TBC',
+        instructor_note: rr?.note || null,
+        class_label: s.label || 'Spinning Class'
       });
     }
   }
+  rows.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   return rows;
 }
 
@@ -383,7 +425,9 @@ async function handler(req, res) {
         capacity:c.capacity,
         booked:c.booked,
         status:c.status,
-        instructor:c.instructor
+        instructor:c.instructor,
+        instructor_note:c.instructor_note,
+        class_label:c.class_label
       }));
       return json(res, 200, {classes}, origin);
     }
