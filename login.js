@@ -4,9 +4,14 @@ const form=document.querySelector("#loginForm");
 const msg=document.querySelector("#loginMessage");
 const passwordInput=document.querySelector("#adminPassword");
 const params=new URLSearchParams(location.search);
-const allowedNext=new Set(["management.html","instructors.html"]);
 const requestedNext=params.get("next")||"management.html";
-const NEXT=allowedNext.has(requestedNext)?requestedNext:"management.html";
+function safeNext(value){
+  if(value==="management.html") return value;
+  if(/^management\.html\?view=(today|analytics|rota|attendance|memberships|instructors|integration)$/.test(value)) return value;
+  if(value==="instructors.html") return "management.html?view=instructors";
+  return "management.html";
+}
+const NEXT=safeNext(requestedNext);
 
 async function validateSavedSession(){
   const token=localStorage.getItem("sk_admin_token");
