@@ -19,6 +19,8 @@
       </div>
     </div>
     <div class="top-actions">
+      <a class="top-link" href="management.html">Management</a>
+      <button class="top-link" id="logoutBtn" type="button">Log out</button>
       <div class="live-pill"><i></i><span id="liveLabel">LIVE</span></div>
     </div>
   </header>
@@ -26,9 +28,13 @@
   <main>
     <section class="intro">
       <div>
-        <p class="eyebrow">THIS WEEK</p>
+        <p class="eyebrow" id="weekEyebrow">THIS WEEK</p>
         <h1>INSTRUCTOR<br>SCHEDULE</h1>
         <p class="sub">View-only weekly schedule showing class times, assigned instructors and current booking counts. No customer, payment or management information is available here.</p>
+        <div class="week-switcher" aria-label="Choose schedule week">
+          <button class="week-tab active" id="thisWeekBtn" type="button">THIS WEEK</button>
+          <button class="week-tab" id="nextWeekBtn" type="button">NEXT WEEK</button>
+        </div>
         <p class="week-range" id="weekRange">—</p>
       </div>
       <div class="updated">
