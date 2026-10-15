@@ -43,7 +43,8 @@ async function validateSavedSession(){
       cache:"no-store"
     });
     if(r.status===401 || r.status===403){
-      clearAdminToken();
+      // An old session check must not erase a newer successful mobile login.
+      if(readAdminToken()===token) clearAdminToken();
       return false;
     }
     if(!r.ok) throw new Error("Session service unavailable");
