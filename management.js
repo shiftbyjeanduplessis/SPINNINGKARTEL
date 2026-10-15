@@ -1,5 +1,5 @@
 const cfg=window.SPINNING_CONFIG||{};
-const API=cfg.apiBaseUrl||"";
+const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
 function readAdminToken(){
   try { const token=localStorage.getItem("sk_admin_token"); if(token) return token; } catch(e) {}
   try { return sessionStorage.getItem("sk_admin_token"); } catch(e) { return null; }
