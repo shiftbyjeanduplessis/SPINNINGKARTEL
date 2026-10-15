@@ -1,6 +1,7 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
 const TOKEN=localStorage.getItem("sk_admin_token");
+let selectedWeekOffset=0;
 const $=s=>document.querySelector(s);
 function todayZA(){
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -78,12 +79,15 @@ function render(rows,start){
   $("#weekRange").textContent=shortDate(start)+" — "+shortDate(addDays(start,6));
 }
 async function refresh(){
-  const start=weekStart(todayZA());
+  const start=addDays(weekStart(todayZA()),selectedWeekOffset*7);
   try{
     const r=await fetch(API+"/api/public/classes?days=7&from="+encodeURIComponent(start)+"&t="+Date.now(),{cache:"no-store"});
     if(!r.ok)throw new Error("Could not load schedule");
     const data=await r.json();
     render(data.classes||[],start);
+    $("#weekEyebrow").textContent=selectedWeekOffset===0?"THIS WEEK":"NEXT WEEK";
+    $("#thisWeekBtn").classList.toggle("active",selectedWeekOffset===0);
+    $("#nextWeekBtn").classList.toggle("active",selectedWeekOffset===1);
     $("#updatedAt").textContent=new Date().toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZone:"Africa/Johannesburg"});
     $("#liveLabel").textContent="LIVE";
   }catch(e){
@@ -91,9 +95,13 @@ async function refresh(){
     $("#schedule").innerHTML='<div class="error">Could not refresh schedule. Retrying automatically…</div>';
   }
 }
+$("#thisWeekBtn").onclick=()=>{selectedWeekOffset=0;refresh();};
+$("#nextWeekBtn").onclick=()=>{selectedWeekOffset=1;refresh();};
+$("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html?next=instructors.html";};
+
 async function boot(){
   if(!TOKEN){
-    location.replace("login.html");
+    location.replace("login.html?next=instructors.html");
     return;
   }
   try{
@@ -109,7 +117,7 @@ async function boot(){
     window.addEventListener("focus",refresh);
   }catch(e){
     localStorage.removeItem("sk_admin_token");
-    location.replace("login.html");
+    location.replace("login.html?next=instructors.html");
   }
 }
 boot();
