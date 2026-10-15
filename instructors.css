@@ -58,3 +58,12 @@ body.instructor-auth-locked{visibility:hidden}
 @media(max-width:620px){
   .top-actions{gap:6px}.top-link{padding:0 8px;font-size:8px}.live-pill{display:none}
 }
+
+.week-switcher{display:flex;gap:8px;margin-top:20px}
+.week-tab{
+  min-height:38px;padding:0 14px;border:1px solid rgba(255,255,255,.16);border-radius:999px;
+  background:#0c0f14;color:#aeb7c3;font:inherit;font-size:9px;font-weight:950;letter-spacing:.08em;cursor:pointer
+}
+.week-tab.active{background:#fff;color:#06070a;border-color:#fff}
+.week-tab:hover{border-color:rgba(255,255,255,.35)}
+@media(max-width:620px){.week-switcher{margin-top:16px}.week-tab{flex:1}}
