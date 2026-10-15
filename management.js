@@ -1,6 +1,14 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"";
-const TOKEN=localStorage.getItem("sk_admin_token");
+function readAdminToken(){
+  try { const token=localStorage.getItem("sk_admin_token"); if(token) return token; } catch(e) {}
+  try { return sessionStorage.getItem("sk_admin_token"); } catch(e) { return null; }
+}
+function clearAdminToken(){
+  try { localStorage.removeItem("sk_admin_token"); } catch(e) {}
+  try { sessionStorage.removeItem("sk_admin_token"); } catch(e) {}
+}
+const TOKEN=readAdminToken();
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
@@ -184,7 +192,12 @@ async function api(path,options={}){
   const headers={...(options.headers||{}),"authorization":"Bearer "+TOKEN};
   if(options.body && !headers["content-type"]) headers["content-type"]="application/json";
   const r=await fetch(API+path,{...options,headers,cache:"no-store"});
-  if(r.status===401){localStorage.removeItem("sk_admin_token");location.replace("login.html");throw new Error("Session expired");}
+  if(r.status===401 || r.status===403){
+    clearAdminToken();
+    const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
+    location.replace("login.html?next="+encodeURIComponent(next));
+    throw new Error("Session expired");
+  }
   const data=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(data.error||"Request failed");
   return data;
@@ -210,7 +223,7 @@ qsa(".nav").forEach(n=>n.onclick=async()=>{
     try{await refreshMonthlyAnalytics();}catch(e){toast(e.message);}
   }
 });
-$("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html";};
+$("#logoutBtn").onclick=()=>{clearAdminToken();location.href="login.html";};
 qsa("[data-open]").forEach(b=>b.onclick=()=>$("#"+b.dataset.open).showModal());
 qsa("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 
@@ -517,24 +530,54 @@ $("#analyticsMonth").onchange=async e=>{
 $("#payPrevWeek").onclick=async()=>{state.payWeekStart=addDays(state.payWeekStart||weekStart(today()),-7);await refreshAttendancePay();};
 $("#payThisWeek").onclick=async()=>{state.payWeekStart=weekStart(today());await refreshAttendancePay();};
 
+function showStartupError(verified){
+  const message=verified
+    ?"Your login is still valid, but some management data could not load."
+    :"Could not verify your saved session. Check the connection and try again.";
+  if(!verified){
+    // No management controls are displayed until the API confirms the session.
+    document.body.innerHTML="";
+  }
+  document.body.classList.remove("admin-auth-locked");
+  const panel=document.createElement("div");
+  panel.setAttribute("role","alert");
+  panel.style.cssText="position:fixed;z-index:9999;top:12px;left:12px;right:12px;margin:0 auto;max-width:440px;padding:20px;border-radius:12px;background:#111;color:#fff;border:1px solid #777;box-shadow:0 8px 30px #0008;font:16px system-ui,sans-serif";
+  const heading=document.createElement("strong");
+  heading.textContent="Connection problem";
+  const detail=document.createElement("p");
+  detail.textContent=message;
+  const retry=document.createElement("button");
+  retry.textContent="TRY AGAIN";
+  retry.type="button";
+  retry.style.cssText="padding:10px 20px;cursor:pointer";
+  retry.onclick=()=>location.reload();
+  panel.append(heading,detail,retry);
+  document.body.appendChild(panel);
+}
+
 async function boot(){
+  const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
   if(!TOKEN){
-    const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
     location.replace("login.html?next="+encodeURIComponent(next));
     return;
   }
 
+  let verified=false;
   try{
     const auth=await fetch(API+"/api/admin/session",{
       headers:{"authorization":"Bearer "+TOKEN},
       cache:"no-store"
     });
-    if(!auth.ok){
-      localStorage.removeItem("sk_admin_token");
-      const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
+    if(auth.status===401 || auth.status===403){
+      clearAdminToken();
       location.replace("login.html?next="+encodeURIComponent(next));
       return;
     }
+    if(!auth.ok) throw new Error("Session service unavailable");
+    verified=true;
+    // Authentication is complete; transient data requests must not log out the user.
+    showView(requestedView());
+    document.body.classList.remove("admin-auth-locked");
 
     const health=await fetch(API+"/health",{cache:"no-store"});
     if(!health.ok) throw new Error("API offline");
@@ -543,14 +586,9 @@ async function boot(){
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
     await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshOwnerInsights(),refreshMonthlyAnalytics(),refreshAttendancePay(),refreshWebhooks()]);
-    showView(requestedView());
-    document.body.classList.remove("admin-auth-locked");
   }catch(e){
-    // Security-first: never reveal the management interface unless authentication
-    // has been verified and the admin data has loaded successfully.
-    document.body.classList.add("admin-auth-locked");
     if(e.message==="Session expired") return;
-    location.replace("login.html");
+    showStartupError(verified);
   }
 }
 boot();
