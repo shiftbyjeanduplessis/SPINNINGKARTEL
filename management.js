@@ -190,9 +190,19 @@ async function api(path,options={}){
   return data;
 }
 
+const ADMIN_VIEWS=new Set(["today","analytics","rota","attendance","memberships","instructors","integration"]);
+function requestedView(){
+  const v=new URLSearchParams(location.search).get("view");
+  return ADMIN_VIEWS.has(v)?v:"today";
+}
 function showView(name){
+  if(!ADMIN_VIEWS.has(name)) name="today";
   qsa(".view").forEach(v=>v.classList.toggle("active",v.dataset.page===name));
   qsa(".nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));
+  const url=new URL(location.href);
+  if(name==="today") url.searchParams.delete("view");
+  else url.searchParams.set("view",name);
+  history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
 }
 qsa(".nav").forEach(n=>n.onclick=async()=>{
   showView(n.dataset.view);
@@ -509,7 +519,8 @@ $("#payThisWeek").onclick=async()=>{state.payWeekStart=weekStart(today());await 
 
 async function boot(){
   if(!TOKEN){
-    location.replace("login.html");
+    const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
+    location.replace("login.html?next="+encodeURIComponent(next));
     return;
   }
 
@@ -520,7 +531,8 @@ async function boot(){
     });
     if(!auth.ok){
       localStorage.removeItem("sk_admin_token");
-      location.replace("login.html");
+      const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
+      location.replace("login.html?next="+encodeURIComponent(next));
       return;
     }
 
@@ -531,6 +543,7 @@ async function boot(){
     state.instructors=i.instructors||[];state.memberships=m.memberships||[];
     renderInstructors();renderMemberships();
     await Promise.all([refreshClasses(),refreshWeeklyBookings(),refreshOwnerInsights(),refreshMonthlyAnalytics(),refreshAttendancePay(),refreshWebhooks()]);
+    showView(requestedView());
     document.body.classList.remove("admin-auth-locked");
   }catch(e){
     // Security-first: never reveal the management interface unless authentication
