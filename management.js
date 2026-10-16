@@ -555,6 +555,21 @@ function showStartupError(verified){
   document.body.appendChild(panel);
 }
 
+async function checkAdminSession(token){
+  const controller=new AbortController();
+  // A stalled mobile/API connection must never leave the management screen blank forever.
+  const deadline=setTimeout(()=>controller.abort(),45000);
+  try{
+    return await fetch(API+"/api/admin/session",{
+      headers:{"authorization":"Bearer "+token},
+      cache:"no-store",
+      signal:controller.signal
+    });
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+
 async function boot(){
   const next="management.html"+(requestedView()!=="today"?"?view="+encodeURIComponent(requestedView()):"");
   if(!TOKEN){
@@ -564,10 +579,7 @@ async function boot(){
 
   let verified=false;
   try{
-    const auth=await fetch(API+"/api/admin/session",{
-      headers:{"authorization":"Bearer "+TOKEN},
-      cache:"no-store"
-    });
+    const auth=await checkAdminSession(TOKEN);
     if(auth.status===401 || auth.status===403){
       clearAdminToken();
       location.replace("login.html?next="+encodeURIComponent(next));
