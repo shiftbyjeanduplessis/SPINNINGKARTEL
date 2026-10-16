@@ -7,6 +7,7 @@ const PORT = Number(process.env.PORT || 10000);
 const DATABASE_URL = process.env.DATABASE_URL;
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || process.env.ADMIN_CODE || '');
 const SESSION_SECRET = String(process.env.SESSION_SECRET || '');
+const ADMIN_SESSION_VERSION = 2; // Reject tokens created before view-only instructor access was restored.
 const BOOKLINK_WEBHOOK_SECRET = String(process.env.BOOKLINK_WEBHOOK_SECRET || '');
 const BOOKLINK_SERVICE_ID = String(process.env.BOOKLINK_SERVICE_ID || '');
 const ALLOWED_ORIGINS = new Set(
@@ -86,7 +87,7 @@ function verifyToken(token) {
   if (!safeEqual(sig, expected)) return null;
   try {
     const payload = JSON.parse(Buffer.from(enc, 'base64url').toString('utf8'));
-    if (!payload.exp || Date.now() > payload.exp) return null;
+    if (payload.role !== 'admin' || payload.version !== ADMIN_SESSION_VERSION || !payload.exp || Date.now() > payload.exp) return null;
     return payload;
   } catch {
     return null;
@@ -448,7 +449,7 @@ async function handler(req, res) {
         return json(res, 401, {error:'invalid_password'}, origin);
       }
       loginAttempts.delete(ip);
-      const payload = {role:'admin',email:'admin',exp:Date.now()+365*24*60*60*1000};
+      const payload = {role:'admin',email:'admin',version:ADMIN_SESSION_VERSION,exp:Date.now()+365*24*60*60*1000};
       return json(res, 200, {token:signToken(payload),expires_at:payload.exp}, origin);
     }
 
