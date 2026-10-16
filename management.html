@@ -4,11 +4,26 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111111">
 <meta name="robots" content="noindex,nofollow">
-<style>body.admin-auth-locked{visibility:hidden}</style>
+<style>
+  body.admin-auth-locked > :not(#authGate) { visibility:hidden !important; }
+  body.admin-auth-locked #authGate { visibility:visible !important; }
+  #authGate { display:none; position:fixed; inset:0; z-index:99999; background:#f5f3ef; color:#171717; padding:24px; place-items:center; font:16px/1.5 system-ui,sans-serif; text-align:center; }
+  body.admin-auth-locked #authGate { display:grid; }
+  #authGate > div { max-width:380px; }
+  #authGate h1 { margin:0 0 10px; font-size:25px; }
+  #authGate p { margin:0 0 14px; }
+  #authGate a { color:#111; text-decoration:underline; }
+</style>
 <title>Spinning Kartel | Management</title>
 <link rel="stylesheet" href="admin.css">
 </head>
 <body class="admin-auth-locked">
+<div id="authGate" role="status" aria-live="polite"><div>
+<h1>Spinning Kartel</h1>
+<p>Checking your secure studio login…</p>
+<p>This may take a moment if the server is waking up.</p>
+<a href="login.html?next=management.html%3Fview%3Dinstructors">Open admin login</a>
+</div></div>
 <header class="admin-topbar">
   <a class="brand invert" href="index.html"><img class="brand-logo" src="logo.webp" alt="Spinning Kartel"><span><strong>SPINNING KARTEL</strong><small>Management</small></span></a>
   <div class="top-actions">
@@ -225,6 +240,6 @@
 
 <div id="toast" class="toast"></div>
 <script src="config.js"></script>
-<script src="management.js?v=20261015-mobile-auth"></script>
+<script src="management.js?v=20261016-authgate-fix"></script>
 </body>
 </html>
