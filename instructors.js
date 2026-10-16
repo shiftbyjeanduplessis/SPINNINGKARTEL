@@ -1,6 +1,5 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
-const TOKEN=localStorage.getItem("sk_admin_token");
 let selectedWeekOffset=0;
 const $=s=>document.querySelector(s);
 function todayZA(){
@@ -97,27 +96,12 @@ async function refresh(){
 }
 $("#thisWeekBtn").onclick=()=>{selectedWeekOffset=0;refresh();};
 $("#nextWeekBtn").onclick=()=>{selectedWeekOffset=1;refresh();};
-$("#logoutBtn").onclick=()=>{localStorage.removeItem("sk_admin_token");location.href="login.html?next=instructors.html";};
-
-async function boot(){
-  if(!TOKEN){
-    location.replace("login.html?next=instructors.html");
-    return;
-  }
-  try{
-    const auth=await fetch(API+"/api/admin/session",{
-      headers:{"authorization":"Bearer "+TOKEN},
-      cache:"no-store"
-    });
-    if(!auth.ok) throw new Error("unauthorized");
-    document.body.classList.remove("admin-auth-locked");
-    await refresh();
-    setInterval(()=>{if(!document.hidden)refresh()},10000);
-    document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
-    window.addEventListener("focus",refresh);
-  }catch(e){
-    localStorage.removeItem("sk_admin_token");
-    location.replace("login.html?next=instructors.html");
-  }
+// Read-only display: the schedule comes exclusively from the public classes API.
+// This page never requests an admin session, carries an admin token, or writes data.
+function boot(){
+  refresh();
+  setInterval(()=>{if(!document.hidden)refresh()},10000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+  window.addEventListener("focus",refresh);
 }
 boot();
