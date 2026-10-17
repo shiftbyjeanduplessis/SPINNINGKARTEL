@@ -155,11 +155,11 @@
       </div>
 
       <div class="pay-rule">
-        <span>Tammy: R200 / class</span>
-        <span>Other instructors: R150 / class</span>
+        <span>Tammy: R200 / attended class</span>
+        <span>Other instructors: R150 / attended class</span>
         <span>Commission = R10 × each rider above 5</span>
         <span>Example: 8 riders = R30 commission</span>
-        <span>Bookings give a provisional figure · closing attendance makes it final</span>
+        <span>0 actual attendees = R0 class pay · bookings give a provisional figure until attendance is closed</span>
       </div>
 
       <div class="pay-weekbar">
@@ -225,7 +225,7 @@
 <dialog id="instructorDialog"><form id="instructorForm" class="modal">
   <div class="modal-head"><div><p class="eyebrow">INSTRUCTOR</p><h2>Add instructor</h2></div><button type="button" class="close" data-close>×</button></div>
   <div class="two"><label>Name<input id="instructorName" required></label><label>Role<select id="instructorRole"><option value="main">Main instructor</option><option value="student">Student instructor</option><option value="guest">Guest instructor</option></select></label></div>
-  <div class="modal-note"><strong>Fixed pay policy:</strong> Tammy earns R200 per class. All other instructors earn R150 per class. Commission is R10 per attendee above 5.</div>
+  <div class="modal-note"><strong>Fixed pay policy:</strong> Tammy earns R200 per class with at least 1 attendee. All other instructors earn R150 per class with at least 1 attendee. Classes with 0 actual attendees earn R0. Commission is R10 per attendee above 5.</div>
   <div class="modal-actions"><button type="button" class="button secondary" data-close>Cancel</button><button class="button" type="submit">ADD INSTRUCTOR</button></div>
 </form></dialog>
 
