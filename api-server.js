@@ -516,7 +516,7 @@ async function handler(req, res) {
       const attendanceQ=await pool.query(`
         SELECT i.name,
                COALESCE(SUM(a.attended_count),0)::int AS riders,
-               COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)::numeric
+               COALESCE(SUM(CASE WHEN a.attended_count > 0 THEN CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END ELSE 0 END),0)::numeric
                  + COALESCE(SUM(GREATEST(a.attended_count-5,0)*10),0)::numeric AS pay
         FROM sk_attendance a
         JOIN sk_instructors i ON i.id=a.instructor_id
@@ -852,19 +852,20 @@ async function handler(req, res) {
 
         row.classes+=1;
         row.booked+=booked;
-        row.class_pay+=basePay;
 
         if(closed){
           const riders=Number(closed.attended_count||0);
           const commission=Math.max(0,riders-5)*10;
           row.closed_classes+=1;
           row.riders+=riders;
+          row.class_pay+=riders>0?basePay:0;
           row.commission+=commission;
-          row.actual_total+=basePay+commission;
+          row.actual_total+=(riders>0?basePay:0)+commission;
         }else{
           // Until attendance is closed, use booked seats only as a clearly-labelled estimate.
           const estimatedCommission=Math.max(0,booked-5)*10;
           row.pending_classes+=1;
+          row.class_pay+=booked>0?basePay:0;
           row.commission+=estimatedCommission;
         }
       }
@@ -887,9 +888,9 @@ async function handler(req, res) {
                COUNT(*)::int AS classes,
                COALESCE(SUM(a.booked_count),0)::int AS booked,
                COALESCE(SUM(a.attended_count),0)::int AS riders,
-               COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)::numeric AS class_pay,
+               COALESCE(SUM(CASE WHEN a.attended_count > 0 THEN CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END ELSE 0 END),0)::numeric AS class_pay,
                COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0)::numeric AS commission,
-               (COALESCE(SUM(CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END),0)
+               (COALESCE(SUM(CASE WHEN a.attended_count > 0 THEN CASE WHEN lower(trim(i.name))='tammy' THEN 200 ELSE 150 END ELSE 0 END),0)
                 + COALESCE(SUM(GREATEST(a.attended_count-5,0) * 10),0))::numeric AS total
         FROM sk_attendance a
         JOIN sk_instructors i ON i.id=a.instructor_id
