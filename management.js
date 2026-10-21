@@ -12,7 +12,7 @@ const TOKEN=readAdminToken();
 
 const $=s=>document.querySelector(s);
 const qsa=s=>[...document.querySelectorAll(s)];
-let state={classes:[],history:[],weeklyClasses:[],bookingWeeks:[],ownerInsights:null,monthlyAnalytics:null,analyticsMonth:today().slice(0,7),payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
+let state={classes:[],rotaClasses:[],rotaWeekOffset:0,history:[],weeklyClasses:[],bookingWeeks:[],ownerInsights:null,monthlyAnalytics:null,analyticsMonth:today().slice(0,7),payClasses:[],payWeekStart:null,payHistory:[],instructors:[],memberships:[],attendance:[],pay:[],events:[],webhookConfigured:false,eventTypes:[],bookingSyncReliable:false};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1900);}
@@ -257,9 +257,24 @@ function instructorOptions(selected){
   return '<option value="">Instructor TBC</option>'+state.instructors.filter(i=>i.active!==false).map(i=>'<option value="'+i.id+'" '+(i.id===selected?'selected':'')+'>'+esc(i.name)+'</option>').join("");
 }
 
+let rotaLoadSequence=0;
+async function refreshRota(){
+  const sequence=++rotaLoadSequence;
+  const start=addDays(weekStart(today()),state.rotaWeekOffset*7);
+  const data=await api("/api/admin/classes?from="+encodeURIComponent(start)+"&days=7");
+  if(sequence!==rotaLoadSequence) return;
+  state.rotaClasses=data.classes||[];
+  renderRota();
+}
+
 function renderRota(){
+  const start=addDays(weekStart(today()),state.rotaWeekOffset*7);
+  const end=addDays(start,6);
+  $("#rotaWeekLabel").textContent=dateLabel(start)+" — "+dateLabel(end);
+  $("#rotaThisWeek").classList.toggle("active",state.rotaWeekOffset===0);
+  $("#rotaNextWeek").classList.toggle("active",state.rotaWeekOffset===1);
   const groups=new Map();
-  state.classes.forEach(c=>{
+  state.rotaClasses.forEach(c=>{
     if(!groups.has(c.date))groups.set(c.date,[]);
     groups.get(c.date).push(c);
   });
@@ -273,35 +288,62 @@ function renderRota(){
             '<strong class="rota-time">'+c.time+'</strong>'+
             '<span class="booklink-count">'+c.booked+' / '+c.capacity+' BOOKED</span>'+
           '</div>'+
-          '<div class="rota-session-meta">'+classStatus(c)+'<span>BOOKLINK SESSION</span></div>'+
-          '<label class="rota-picker"><span>Instructor</span><select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'">'+instructorOptions(c.instructor_id)+'</select></label>'+
+          '<div class="rota-session-meta">'+classStatus(c)+'<span>MASTER SCHEDULE</span></div>'+
+          '<label class="rota-picker"><span>Instructor</span><select class="rota-select" data-date="'+c.date+'" data-time="'+c.time+'" data-saved="'+esc(c.instructor_id||'')+'">'+instructorOptions(c.instructor_id)+'</select></label>'+
+          '<span class="rota-save-status" role="status">'+(c.instructor_id?'SAVED IN MASTER':'INSTRUCTOR TBC')+'</span>'+
         '</article>'
       ).join("")+'</div>'+
     '</section>'
-  ).join("");
+  ).join("")||'<p class="muted">No classes scheduled this week.</p>';
 
+  // Save each selection independently. Never redraw the entire list while another
+  // instructor dropdown is being edited, as that could silently discard changes.
   qsa(".rota-select").forEach(select=>{
     select.onchange=async()=>{
-      const chosen=select.value||null;
+      const date=select.dataset.date;
+      const time=select.dataset.time;
+      const chosen=select.value||"";
+      const previous=select.dataset.saved||"";
+      const status=select.closest(".rota-session").querySelector(".rota-save-status");
       select.disabled=true;
+      status.textContent="SAVING…";
       try{
         await api("/api/admin/rota",{
           method:"POST",
-          body:JSON.stringify({assignments:[{
-            date:select.dataset.date,
-            time:select.dataset.time,
-            instructor_id:chosen
-          }]})
+          body:JSON.stringify({assignments:[{date,time,instructor_id:chosen||null}]})
         });
-        toast(chosen?"Instructor saved and published.":"Instructor set to TBC.");
-        await refreshClasses();
+        // Confirm the actual persisted master record before claiming it is live.
+        const result=await api("/api/admin/classes?from="+encodeURIComponent(date)+"&days=1");
+        const saved=(result.classes||[]).find(c=>c.date===date&&c.time===time);
+        if(!saved||String(saved.instructor_id||"")!==chosen){
+          throw new Error("Save could not be verified. Please try again.");
+        }
+        select.dataset.saved=chosen;
+        status.textContent=chosen?"SAVED · LIVE":"TBC · LIVE";
+        const key=c=>c.date===date&&c.time===time;
+        const idx=state.rotaClasses.findIndex(key);
+        if(idx>=0) state.rotaClasses[idx]=saved;
+        const idxToday=state.classes.findIndex(key);
+        if(idxToday>=0) state.classes[idxToday]=saved;
+        toast(chosen?"Instructor saved to master schedule.":"Instructor set to TBC on live schedule.");
       }catch(e){
-        select.disabled=false;
+        select.value=previous;
+        status.textContent="NOT SAVED";
         toast(e.message);
+      }finally{
+        select.disabled=false;
       }
     };
   });
 }
+$("#rotaThisWeek").onclick=async()=>{
+  state.rotaWeekOffset=0;
+  try{await refreshRota();}catch(e){toast(e.message);}
+};
+$("#rotaNextWeek").onclick=async()=>{
+  state.rotaWeekOffset=1;
+  try{await refreshRota();}catch(e){toast(e.message);}
+};
 
 function attendanceMap(){return new Map(state.attendance.map(a=>[String(a.service_date).slice(0,10)+"|"+String(a.start_time).slice(0,5),a]));}
 
@@ -452,7 +494,8 @@ async function refreshClasses(){
   ]);
   state.classes=future.classes||[];
   state.history=past.classes||[];
-  renderToday();renderRota();renderAttendance();
+  renderToday();renderAttendance();
+  await refreshRota();
 }
 
 async function refreshMemberships(){
