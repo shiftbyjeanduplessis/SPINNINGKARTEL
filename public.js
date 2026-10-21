@@ -73,20 +73,6 @@ function fullCard(c){
     (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
-function fallback(){
-  const rows=[],start=new Date(scheduleStartDate()+"T12:00:00+02:00");
-  for(let i=0;i<15;i++){
-    const d=new Date(start);d.setDate(start.getDate()+i);
-    const dow=d.getDay();
-    const date=d.toISOString().slice(0,10);
-    let times=[];
-    if(dow===6)times=cfg.saturdayTimes||["07:00","08:00"];
-    else if(dow>=1&&dow<=4)times=cfg.weekdayTimes||["05:30","08:00","17:00","18:00","19:00"];
-    else if(dow===5)times=cfg.fridayTimes||["05:30","08:00","17:00","18:00"];
-    times.forEach(time=>rows.push({date,time,status:"open",instructor:"Instructor TBC"}));
-  }
-  return rows.filter(futureClass);
-}
 function renderFull(rows){
   const el=$("#fullSchedule");if(!el)return;
   const groups=new Map();
@@ -103,16 +89,17 @@ function renderFull(rows){
 }
 async function bootSchedule(){
   let rows=[];
+  let failed=false;
   try{
     const r=await fetch(API+"/api/public/classes?days=14&from="+encodeURIComponent(scheduleStartDate()),{cache:"no-store"});
     if(!r.ok)throw new Error("api");
     const data=await r.json();
     BOOKING_SYNC_RELIABLE=Boolean(data.sync_reliable);
     rows=data.classes||[];
-  }catch(e){rows=fallback()}
+  }catch(e){failed=true; BOOKING_SYNC_RELIABLE=false; rows=[];}
   rows=rows.filter(futureClass);
   const quick=$("#quickSchedule");
-  if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||'<div class="schedule-loading">No upcoming classes found.</div>';
+  if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||(failed?'<div class="schedule-loading">Live class schedule temporarily unavailable. Book directly through Booklink.</div>':'<div class="schedule-loading">No upcoming classes found.</div>');
   renderFull(rows);
 }
 const toggle=$("#toggleFullSchedule");
