@@ -138,26 +138,13 @@ function statusFor(booked, capacity) {
   return 'open';
 }
 
-function defaultInstructorFor(weekday, time) {
-  const map = {
-    '1|05:30':['Tammy',''], '1|08:00':['Tammy',''], '1|17:00':['Conrad',''], '1|18:00':['Tammy',''], '1|19:00':['Tammy','If booked'],
-    '2|05:30':['Tammy',''], '2|08:00':['Tammy',''], '2|17:00':['Conrad',''], '2|18:00':['Tammy',''], '2|19:00':['Demi',''],
-    '3|05:30':['Tammy','Team Build'], '3|08:00':['Tammy',''], '3|17:00':['Elzet',''], '3|18:00':['Conrad',''], '3|19:00':['Robbie',''],
-    '4|05:30':['Demi',''], '4|08:00':['Tammy',''], '4|15:00':['Tammy',''], '4|17:00':['Tammy','Team Build'], '4|18:00':['Tammy','Team Build'], '4|19:00':['Tammy','Team Build'],
-    '5|05:30':['Robbie',''], '5|08:00':['Tammy',''], '5|17:00':['Elzet',''], '5|18:00':['Tammy',''],
-    '6|07:00':['Tammy',''], '6|08:00':['Instructor TBC','Based on bookings']
-  };
-  const v = map[String(weekday)+'|'+String(time)] || ['Instructor TBC',''];
-  return {name:v[0], note:v[1]};
-}
-
 async function classRows(days, startDate) {
   const from = startDate || todayZA();
   const dates = [];
   for (let i = 0; i < days; i++) dates.push(addDays(from, i));
   const to = dates[dates.length - 1];
 
-  const [slotsQ, rotaQ, statsQ, instructorsQ, specialsQ] = await Promise.all([
+  const [slotsQ, rotaQ, statsQ, specialsQ] = await Promise.all([
     pool.query("SELECT weekday,start_time::text,duration_minutes,capacity FROM sk_weekly_slots WHERE active=true ORDER BY weekday,start_time"),
     pool.query(`
       SELECT r.service_date::text, r.start_time::text, r.instructor_id, r.note, i.name AS instructor_name
@@ -170,7 +157,6 @@ async function classRows(days, startDate) {
       FROM sk_session_stats
       WHERE service_date BETWEEN $1 AND $2
     `, [from, to]),
-    pool.query("SELECT id,name FROM sk_instructors WHERE active=true"),
     pool.query(`
       SELECT service_date::text,start_time::text,duration_minutes,capacity,label
       FROM sk_special_sessions
@@ -181,7 +167,6 @@ async function classRows(days, startDate) {
 
   const rota = new Map(rotaQ.rows.map(r => [r.service_date + '|' + r.start_time.slice(0,5), r]));
   const stats = new Map(statsQ.rows.map(r => [r.service_date + '|' + r.start_time.slice(0,5), r]));
-  const instructorByName = new Map(instructorsQ.rows.map(r => [String(r.name||'').trim().toLowerCase(), r]));
   const slotsByDay = new Map();
   for (const s of slotsQ.rows) {
     const arr = slotsByDay.get(Number(s.weekday)) || [];
@@ -208,9 +193,7 @@ async function classRows(days, startDate) {
       const ss = stats.get(key);
       const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
       const booked = Number(ss?.booked_count ?? 0);
-      const def = defaultInstructorFor(wd, time);
-      const defInstructor = instructorByName.get(String(def.name||'').trim().toLowerCase()) || null;
-      const hasRota = Boolean(rr);
+
       rows.push({
         id: date + '_' + time.replace(':',''),
         date,
@@ -220,9 +203,11 @@ async function classRows(days, startDate) {
         capacity,
         booked,
         status: statusFor(booked, capacity),
-        instructor_id: hasRota ? (rr.instructor_id || null) : (defInstructor?.id || null),
-        instructor: hasRota ? (rr.instructor_name || 'Instructor TBC') : (defInstructor?.name || def.name || 'Instructor TBC'),
-        instructor_note: hasRota ? (rr.note || null) : (def.note || null),
+        // The dated admin master rota is the sole authority for instructor names.
+        // An unscheduled instructor stays TBC instead of inheriting a hard-coded name.
+        instructor_id: rr?.instructor_id || null,
+        instructor: rr?.instructor_name || 'Instructor TBC',
+        instructor_note: rr?.note || null,
         class_label: null
       });
     }
