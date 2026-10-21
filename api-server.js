@@ -138,6 +138,9 @@ function statusFor(booked, capacity) {
   return 'open';
 }
 
+// Instructor assignments dated before 26 Oct 2026 were the active legacy week.
+// Later dates were prefilled in advance; they are only published after an explicit
+// admin save sets confirmed_at. This prevents ghost future-week instructor names.
 async function classRows(days, startDate) {
   const from = startDate || todayZA();
   const dates = [];
@@ -151,6 +154,7 @@ async function classRows(days, startDate) {
       FROM sk_instructor_rota r
       LEFT JOIN sk_instructors i ON i.id=r.instructor_id
       WHERE r.service_date BETWEEN $1 AND $2
+        AND (r.service_date < DATE '2026-10-26' OR r.confirmed_at IS NOT NULL)
     `, [from, to]),
     pool.query(`
       SELECT service_date::text,start_time::text,booked_count,capacity
@@ -735,10 +739,10 @@ async function handler(req, res) {
         for (const a of assignments) {
           if (!a.date || !a.time) continue;
           await client.query(`
-            INSERT INTO sk_instructor_rota(service_date,start_time,instructor_id,note,updated_at)
-            VALUES($1,$2,$3,$4,now())
+            INSERT INTO sk_instructor_rota(service_date,start_time,instructor_id,note,updated_at,confirmed_at)
+            VALUES($1,$2,$3,$4,now(),now())
             ON CONFLICT(service_date,start_time) DO UPDATE
-            SET instructor_id=EXCLUDED.instructor_id,note=EXCLUDED.note,updated_at=now()
+            SET instructor_id=EXCLUDED.instructor_id,note=EXCLUDED.note,updated_at=now(),confirmed_at=now()
           `, [a.date, a.time, a.instructor_id || null, a.note || null]);
         }
         await client.query('COMMIT');
@@ -755,7 +759,7 @@ async function handler(req, res) {
       const b = await readJson(req);
       const st = await pool.query("SELECT booked_count FROM sk_session_stats WHERE service_date=$1 AND start_time=$2", [b.date,b.time]);
       const booked = Number(st.rows[0]?.booked_count ?? b.booked_count ?? 0);
-      const rota = await pool.query("SELECT instructor_id FROM sk_instructor_rota WHERE service_date=$1 AND start_time=$2", [b.date,b.time]);
+      const rota = await pool.query("SELECT instructor_id FROM sk_instructor_rota WHERE service_date=$1 AND start_time=$2 AND (service_date < DATE '2026-10-26' OR confirmed_at IS NOT NULL)", [b.date,b.time]);
       const instructorId = b.instructor_id || rota.rows[0]?.instructor_id || null;
       const attended = Math.max(0, Number(b.attended_count || 0));
       const noShow = Math.max(0, booked - attended);
