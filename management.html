@@ -141,10 +141,11 @@
 
     <section class="view" data-page="rota">
       <div class="page-head">
-        <div><p class="eyebrow">BOOKLINK CLASS CALENDAR</p><h1>Classes & instructors</h1><p class="muted">Each class mirrors the Booklink schedule and booking count. Choose the instructor from the dropdown; the public website updates to show that instructor.</p></div>
+        <div><p class="eyebrow">MASTER INSTRUCTOR SCHEDULE</p><h1>Classes & instructors</h1><p class="muted">This is the only source of instructor assignments shown on the website and read-only instructor page. Plan next week on Friday: each dropdown saves directly to the live master roster. Unassigned classes show Instructor TBC.</p></div>
       </div>
       <section class="panel">
-        <div class="tracker-strip"><strong>BOOKLINK SESSIONS</strong><span>Live booked seats</span><span>Instructor dropdown</span><span>Saves straight to website</span></div>
+        <div class="tracker-strip"><strong>MASTER ROSTER</strong><span>Booklink booking counts</span><span>Instructor dropdown</span><span>Saved changes appear on both public pages</span></div>
+        <div class="pay-weekbar" aria-label="Choose instructor roster week"><button type="button" id="rotaThisWeek" class="mini active">THIS WEEK</button><button type="button" id="rotaNextWeek" class="mini">NEXT WEEK</button><strong id="rotaWeekLabel" aria-live="polite"></strong></div>
         <div id="rotaList" class="rota-list"></div>
       </section>
     </section>
@@ -240,6 +241,6 @@
 
 <div id="toast" class="toast"></div>
 <script src="config.js"></script>
-<script src="management.js?v=20261016-authgate-fix"></script>
+<script src="management.js?v=20261021-master-rota"></script>
 </body>
 </html>
