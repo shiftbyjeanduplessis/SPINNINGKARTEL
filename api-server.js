@@ -141,6 +141,12 @@ function statusFor(booked, capacity) {
 // Instructor assignments dated before 26 Oct 2026 were the active legacy week.
 // Later dates were prefilled in advance; they are only published after an explicit
 // admin save sets confirmed_at. This prevents ghost future-week instructor names.
+// Legacy rota notes such as "Team Build" must not be advertised as class labels.
+function displayInstructorNote(note) {
+  const value = String(note || '').trim();
+  return value && !/team[\s-]*build(?:ing)?/i.test(value) ? value : null;
+}
+
 async function classRows(days, startDate) {
   const from = startDate || todayZA();
   const dates = [];
@@ -211,7 +217,7 @@ async function classRows(days, startDate) {
         // An unscheduled instructor stays TBC instead of inheriting a hard-coded name.
         instructor_id: rr?.instructor_id || null,
         instructor: rr?.instructor_name || 'Instructor TBC',
-        instructor_note: rr?.note || null,
+        instructor_note: displayInstructorNote(rr?.note),
         class_label: null
       });
     }
@@ -235,7 +241,7 @@ async function classRows(days, startDate) {
         status: statusFor(booked, capacity),
         instructor_id: rr?.instructor_id || null,
         instructor: rr?.instructor_name || 'Instructor TBC',
-        instructor_note: rr?.note || null,
+        instructor_note: displayInstructorNote(rr?.note),
         class_label: s.label || 'Spinning Class'
       });
     }
