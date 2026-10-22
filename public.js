@@ -3,7 +3,6 @@ const API=cfg.apiBaseUrl||"";
 const BOOKING_URL=cfg.booklinkPublicUrl||"https://bklnk.co.za/spinningkartel";
 const OPEN_FROM="2026-10-05T18:00:00+02:00";
 const $=s=>document.querySelector(s);
-let BOOKING_SYNC_RELIABLE=false;
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function futureClass(c){
@@ -43,14 +42,13 @@ function liveState(c){
   return"open";
 }
 function status(c){
-  if(!BOOKING_SYNC_RELIABLE)return{label:"BOOK",cls:""};
-  const state=liveState(c);
-  if(state==="full")return{label:"FULL",cls:"full"};
-  if(state==="almost_full"){
-    const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
-    return{label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
-  }
-  return{label:"OPEN",cls:"open"};
+  // The class API provides authoritative current booking counts.
+  // Do not hide occupancy based on an optional metadata flag.
+  const current=liveState(c);
+  const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
+  if(current==="full")return {label:"SOLD OUT",cls:"full"};
+  if(current==="almost_full")return {label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
+  return {label:"AVAILABLE · "+left+" LEFT",cls:"open"};
 }
 function quickCard(c){
   const s=status(c);
@@ -60,17 +58,16 @@ function quickCard(c){
     '<strong>'+esc(c.time)+'</strong>'+
     '<p class="class-meta">'+esc(rideName(c.time,c.class_label))+' · 45 min · R70</p>'+
     '<p class="class-instructor">'+instructorLine(c)+'</p>'+
-    (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    (liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function fullCard(c){
   const s=status(c);
-  const statusText=s.label==="OPEN"?"BOOK":s.label;
   return '<article class="full-class '+s.cls+'">'+
     '<div class="time">'+esc(c.time)+'</div>'+
     '<div class="desc"><strong>'+esc(c.instructor||"Instructor TBC")+'</strong><span>'+esc(rideName(c.time,c.class_label))+' · 45 min · R70'+(c.instructor_note?' · '+esc(c.instructor_note):'')+'</span></div>'+
-    '<div class="book">'+statusText+'</div>'+
-    (BOOKING_SYNC_RELIABLE&&liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
+    '<div class="book">'+s.label+'</div>'+
+    (liveState(c)==="full"?'':'<a href="'+BOOKING_URL+'" aria-label="Book '+esc(c.date)+' '+esc(c.time)+'"></a>')+
   '</article>';
 }
 function renderFull(rows){
@@ -94,9 +91,8 @@ async function bootSchedule(){
     const r=await fetch(API+"/api/public/classes?days=14&from="+encodeURIComponent(scheduleStartDate()),{cache:"no-store"});
     if(!r.ok)throw new Error("api");
     const data=await r.json();
-    BOOKING_SYNC_RELIABLE=Boolean(data.sync_reliable);
     rows=data.classes||[];
-  }catch(e){failed=true; BOOKING_SYNC_RELIABLE=false; rows=[];}
+  }catch(e){failed=true; rows=[];}
   rows=rows.filter(futureClass);
   const quick=$("#quickSchedule");
   if(quick)quick.innerHTML=rows.slice(0,4).map(quickCard).join("")||(failed?'<div class="schedule-loading">Live class schedule temporarily unavailable. Book directly through Booklink.</div>':'<div class="schedule-loading">No upcoming classes found.</div>');
