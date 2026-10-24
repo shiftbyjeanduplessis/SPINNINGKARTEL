@@ -1,6 +1,19 @@
 const cfg=window.SPINNING_CONFIG||{};
 const API=cfg.apiBaseUrl||"https://spinningkartel-api.onrender.com";
-let selectedWeekOffset=0;
+// After the final Saturday session has finished, open the published
+// upcoming instructor rota by default. Staff can still switch weeks.
+function defaultWeekOffset(now=new Date()){
+  const parts=new Intl.DateTimeFormat("en-GB",{
+    timeZone:"Africa/Johannesburg",weekday:"short",hour:"2-digit",
+    minute:"2-digit",hour12:false
+  }).formatToParts(now);
+  const part=name=>parts.find(p=>p.type===name)?.value||"";
+  const day=part("weekday");
+  const minutes=Number(part("hour"))*60+Number(part("minute"));
+  return day==="Sun" || (day==="Sat"&&minutes>=9*60) ? 1 : 0;
+}
+let selectedWeekOffset=defaultWeekOffset();
+let latestRefresh=0;
 const $=s=>document.querySelector(s);
 function todayZA(){
   return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -55,7 +68,7 @@ function card(c){
   const instructor=(c.instructor&&c.instructor!=="Instructor TBC")?c.instructor:"Instructor TBC";
   return '<article class="class-card '+s+'">'+
     '<div class="time">'+esc(c.time)+'</div>'+
-    '<div class="details"><strong>'+esc(rideName(c.time))+'</strong><span>'+esc(instructor)+'</span></div>'+
+    '<div class="details"><strong>'+esc(c.class_label||rideName(c.time))+'</strong><span>'+esc(instructor)+(c.instructor_note?' · '+esc(c.instructor_note):'')+'</span></div>'+
     '<div class="count"><strong>'+booked+' / '+cap+'</strong><span class="'+s+'">'+statusLabel(c)+'</span></div>'+
   '</article>';
 }
@@ -78,18 +91,23 @@ function render(rows,start){
   $("#weekRange").textContent=shortDate(start)+" — "+shortDate(addDays(start,6));
 }
 async function refresh(){
-  const start=addDays(weekStart(todayZA()),selectedWeekOffset*7);
+  const requestId=++latestRefresh;
+  const weekOffset=selectedWeekOffset;
+  const start=addDays(weekStart(todayZA()),weekOffset*7);
   try{
     const r=await fetch(API+"/api/public/classes?days=7&from="+encodeURIComponent(start)+"&t="+Date.now(),{cache:"no-store"});
     if(!r.ok)throw new Error("Could not load schedule");
     const data=await r.json();
+    // Ignore an older in-flight request if the user switched weeks.
+    if(requestId!==latestRefresh || weekOffset!==selectedWeekOffset)return;
     render(data.classes||[],start);
-    $("#weekEyebrow").textContent=selectedWeekOffset===0?"THIS WEEK":"NEXT WEEK";
-    $("#thisWeekBtn").classList.toggle("active",selectedWeekOffset===0);
-    $("#nextWeekBtn").classList.toggle("active",selectedWeekOffset===1);
+    $("#weekEyebrow").textContent=weekOffset===0?"THIS WEEK":"NEXT WEEK";
+    $("#thisWeekBtn").classList.toggle("active",weekOffset===0);
+    $("#nextWeekBtn").classList.toggle("active",weekOffset===1);
     $("#updatedAt").textContent=new Date().toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZone:"Africa/Johannesburg"});
     $("#liveLabel").textContent="LIVE";
   }catch(e){
+    if(requestId!==latestRefresh || weekOffset!==selectedWeekOffset)return;
     $("#liveLabel").textContent="RETRYING";
     $("#schedule").innerHTML='<div class="error">Could not refresh schedule. Retrying automatically…</div>';
   }
