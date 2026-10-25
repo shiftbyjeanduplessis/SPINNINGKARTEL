@@ -19,6 +19,7 @@ function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");se
 function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Johannesburg",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
 function addDays(date,n){const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 function weekStart(date){const d=new Date(date+"T12:00:00Z");const dow=d.getUTCDay();d.setUTCDate(d.getUTCDate()-((dow+6)%7));return d.toISOString().slice(0,10);}
+function scheduleWeekStart(date){const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-d.getUTCDay());return d.toISOString().slice(0,10);}
 function dateLabel(d){return new Date(d+"T12:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"}).toUpperCase();}
 function roleLabel(r){return r==="student"?"Student instructor":r==="guest"?"Guest instructor":"Main instructor";}
 function money(v){return "R"+Number(v||0).toFixed(0);}
@@ -37,13 +38,16 @@ function renderWeeklyBookings(){
   const summary=$("#weeklyBookingSummary");
   const label=$("#weeklyBookingLabel");
 
-  if(label) label.textContent="Since opening";
+  if(label) label.textContent="Sunday–Saturday booking week";
 
   const total=weeks.reduce((s,w)=>s+Number(w.bookings||0),0);
-  const latest=weeks.length?Number(weeks[weeks.length-1].bookings||0):0;
+  const current=weeks[weeks.length-1]||null;
+  const latest=Number(current?.bookings||0);
+  // Studio's public classes run Mon–Sat; Sunday is the rollover day.
+  const range=current?dateLabel(addDays(current.week_start,1))+' – '+dateLabel(addDays(current.week_start,6)):'';
   if(summary) summary.innerHTML=
-    '<strong>'+latest+' bookings this week</strong>'+
-    '<span>'+total+' bookings since tracking began</span>';
+    '<strong>'+latest+' bookings · '+esc(range)+'</strong>'+
+    '<span>Current booking week starts Sunday · '+total+' bookings in chart</span>';
 
   if(!chart) return;
   if(!weeks.length){
@@ -260,7 +264,7 @@ function instructorOptions(selected){
 let rotaLoadSequence=0;
 async function refreshRota(){
   const sequence=++rotaLoadSequence;
-  const start=addDays(weekStart(today()),state.rotaWeekOffset*7);
+  const start=addDays(scheduleWeekStart(today()),state.rotaWeekOffset*7);
   const data=await api("/api/admin/classes?from="+encodeURIComponent(start)+"&days=7");
   if(sequence!==rotaLoadSequence) return;
   state.rotaClasses=data.classes||[];
@@ -268,7 +272,7 @@ async function refreshRota(){
 }
 
 function renderRota(){
-  const start=addDays(weekStart(today()),state.rotaWeekOffset*7);
+  const start=addDays(scheduleWeekStart(today()),state.rotaWeekOffset*7);
   const end=addDays(start,6);
   $("#rotaWeekLabel").textContent=dateLabel(start)+" — "+dateLabel(end);
   $("#rotaThisWeek").classList.toggle("active",state.rotaWeekOffset===0);
