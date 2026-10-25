@@ -10,7 +10,7 @@ function defaultWeekOffset(now=new Date()){
   const part=name=>parts.find(p=>p.type===name)?.value||"";
   const day=part("weekday");
   const minutes=Number(part("hour"))*60+Number(part("minute"));
-  return day==="Sun" || (day==="Sat"&&minutes>=9*60) ? 1 : 0;
+  return day==="Sat"&&minutes>=9*60 ? 1 : 0;
 }
 let selectedWeekOffset=defaultWeekOffset();
 let latestRefresh=0;
@@ -25,8 +25,7 @@ function addDays(date,n){
 }
 function weekStart(date){
   const d=new Date(date+"T12:00:00Z");
-  const dow=d.getUTCDay();
-  return addDays(date,-((dow+6)%7));
+  return addDays(date,-d.getUTCDay());
 }
 function prettyDate(date){
   return new Date(date+"T12:00:00+02:00").toLocaleDateString("en-ZA",{weekday:"long",day:"numeric",month:"long"});
