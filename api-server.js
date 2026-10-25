@@ -691,7 +691,7 @@ async function handler(req, res) {
         const t=todayZA();
         const d=new Date(t+'T12:00:00Z');
         const dow=d.getUTCDay();
-        d.setUTCDate(d.getUTCDate()-((dow+6)%7));
+        d.setUTCDate(d.getUTCDate()-dow);
         return d.toISOString().slice(0,10);
       })();
       const firstStart = addDays(currentStart, -(weeks-1)*7);
@@ -715,7 +715,7 @@ async function handler(req, res) {
       for(const row of q.rows){
         const d=new Date(String(row.service_date).slice(0,10)+'T12:00:00Z');
         const dow=d.getUTCDay();
-        d.setUTCDate(d.getUTCDate()-((dow+6)%7));
+        d.setUTCDate(d.getUTCDate()-dow);
         const ws=d.toISOString().slice(0,10);
         if(!byWeek.has(ws)) continue;
         const w=byWeek.get(ws);
