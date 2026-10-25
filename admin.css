@@ -182,7 +182,7 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 
 /* Weekly booking graph */
 .weekly-bookings-panel{overflow:hidden}
-.weekly-booking-summary{display:flex;align-items:baseline;gap:10px;margin:-8px 0 18px}
+.weekly-booking-summary{display:grid;gap:5px;margin:-8px 0 18px}
 .weekly-booking-summary strong{font-size:26px;letter-spacing:-.04em}
 .weekly-booking-summary span{font-size:10px;color:var(--muted)}
 .weekly-booking-chart{
