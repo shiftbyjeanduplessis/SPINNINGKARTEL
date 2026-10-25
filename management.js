@@ -45,9 +45,14 @@ function renderWeeklyBookings(){
   const latest=Number(current?.bookings||0);
   // Studio's public classes run Mon–Sat; Sunday is the rollover day.
   const range=current?dateLabel(addDays(current.week_start,1))+' – '+dateLabel(addDays(current.week_start,6)):'';
+  const daily=current?Array.from({length:6},(_,i)=>{
+    const date=addDays(current.week_start,i+1);
+    const count=(current.classes||[]).filter(c=>c.date===date).reduce((n,c)=>n+Number(c.booked||0),0);
+    return ['Mon','Tue','Wed','Thu','Fri','Sat'][i]+' '+count;
+  }).join(' · '):'';
   if(summary) summary.innerHTML=
-    '<strong>'+latest+' bookings · '+esc(range)+'</strong>'+
-    '<span>Current booking week starts Sunday · '+total+' bookings in chart</span>';
+    '<strong>'+latest+' booked seats · '+esc(range)+'</strong>'+
+    '<span>'+esc(daily)+'</span>';
 
   if(!chart) return;
   if(!weeks.length){
