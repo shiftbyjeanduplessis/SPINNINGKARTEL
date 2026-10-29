@@ -10,6 +10,13 @@ const SESSION_SECRET = String(process.env.SESSION_SECRET || '');
 const ADMIN_SESSION_VERSION = 2; // Reject tokens created before view-only instructor access was restored.
 const BOOKLINK_WEBHOOK_SECRET = String(process.env.BOOKLINK_WEBHOOK_SECRET || '');
 const BOOKLINK_SERVICE_ID = String(process.env.BOOKLINK_SERVICE_ID || '');
+// Studio expansion effective 29 October 2026. Keep historical classes at 12.
+const CAPACITY_CHANGED_ON = '2026-10-29';
+const CURRENT_CLASS_CAPACITY = 16;
+function capacityForDate(date) {
+  return String(date || '').slice(0,10) >= CAPACITY_CHANGED_ON ? CURRENT_CLASS_CAPACITY : 12;
+}
+
 const ALLOWED_ORIGINS = new Set(
   String(process.env.ALLOWED_ORIGINS || 'https://spinningkartel.co.za,https://www.spinningkartel.co.za,https://spinningkartel.onrender.com')
     .split(',').map(x => x.trim()).filter(Boolean)
@@ -201,7 +208,7 @@ async function classRows(days, startDate) {
       seen.add(time);
       const rr = rota.get(key);
       const ss = stats.get(key);
-      const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
+      const capacity = capacityForDate(date);
       const booked = Number(ss?.booked_count ?? 0);
 
       rows.push({
@@ -228,7 +235,7 @@ async function classRows(days, startDate) {
       const key = date + '|' + time;
       const rr = rota.get(key);
       const ss = stats.get(key);
-      const capacity = Number(ss?.capacity ?? s.capacity ?? 12);
+      const capacity = capacityForDate(date);
       const booked = Number(ss?.booked_count ?? 0);
       rows.push({
         id: date + '_' + time.replace(':',''),
@@ -318,10 +325,10 @@ function eventDateTime(data) {
 async function changeBooked(date, time, delta) {
   await pool.query(`
     INSERT INTO sk_session_stats(service_date,start_time,booked_count,capacity,updated_at)
-    VALUES($1,$2,GREATEST(0,$3),12,now())
+    VALUES($1,$2,GREATEST(0,$3),CASE WHEN $1::date >= DATE '2026-10-29' THEN 16 ELSE 12 END,now())
     ON CONFLICT(service_date,start_time) DO UPDATE
     SET booked_count=GREATEST(0,sk_session_stats.booked_count + $3),
-        capacity=12,
+        capacity=CASE WHEN sk_session_stats.service_date >= DATE '2026-10-29' THEN 16 ELSE 12 END,
         updated_at=now()
   `, [date, time, delta]);
 }
@@ -1040,7 +1047,7 @@ async function rebuildBooklinkSessionCounts() {
 
   await pool.query(`
     UPDATE sk_session_stats
-    SET booked_count=0,capacity=12,updated_at=now()
+    SET booked_count=0,capacity=CASE WHEN service_date >= DATE '2026-10-29' THEN 16 ELSE 12 END,updated_at=now()
     WHERE service_date >= '2026-10-01'
   `);
 
@@ -1048,10 +1055,10 @@ async function rebuildBooklinkSessionCounts() {
     const [date,time] = key.split('|');
     await pool.query(`
       INSERT INTO sk_session_stats(service_date,start_time,booked_count,capacity,updated_at)
-      VALUES($1,$2,$3,12,now())
+      VALUES($1,$2,$3,CASE WHEN $1::date >= DATE '2026-10-29' THEN 16 ELSE 12 END,now())
       ON CONFLICT(service_date,start_time) DO UPDATE
       SET booked_count=EXCLUDED.booked_count,
-          capacity=12,
+          capacity=EXCLUDED.capacity,
           updated_at=now()
     `, [date,time,booked]);
   }
