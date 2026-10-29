@@ -35,7 +35,7 @@ function instructorLine(c){
   return '<span class="instructor-name">WITH '+name.toUpperCase()+'</span>'+note;
 }
 function liveState(c){
-  const capacity=Math.max(1,Number(c.capacity||12));
+  const capacity=Math.max(1,Number(c.capacity||16));
   const booked=Math.max(0,Number(c.booked||0));
   if(booked>=capacity)return"full";
   if(booked/capacity>=0.75)return"almost_full";
@@ -45,7 +45,7 @@ function status(c){
   // The class API provides authoritative current booking counts.
   // Do not hide occupancy based on an optional metadata flag.
   const current=liveState(c);
-  const left=Math.max(0,Number(c.capacity||12)-Number(c.booked||0));
+  const left=Math.max(0,Number(c.capacity||16)-Number(c.booked||0));
   if(current==="full")return {label:"SOLD OUT",cls:"full"};
   if(current==="almost_full")return {label:"ALMOST FULL · "+left+" LEFT",cls:"warning"};
   return {label:"AVAILABLE · "+left+" LEFT",cls:"open"};
