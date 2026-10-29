@@ -1,7 +1,7 @@
 window.SPINNING_CONFIG = {
   studioName: "Spinning Kartel",
-  capacity: 12,
-  physicalBikes: 20,
+  capacity: 16,
+  physicalBikes: 16,
   dropInPrice: 70,
   weekdayTimes: ["05:30","08:00","17:00","18:00","19:00"],
   fridayTimes: ["05:30","08:00","17:00","18:00"],
