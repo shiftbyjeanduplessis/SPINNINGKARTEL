@@ -43,14 +43,14 @@ function rideName(time){
   return"Spinning Class";
 }
 function classState(c){
-  const cap=Math.max(1,Number(c.capacity||12));
+  const cap=Math.max(1,Number(c.capacity||16));
   const booked=Math.max(0,Number(c.booked||0));
   if(booked>=cap)return"full";
   if(booked/cap>=.75)return"almost";
   return"open";
 }
 function statusLabel(c){
-  const cap=Math.max(1,Number(c.capacity||12));
+  const cap=Math.max(1,Number(c.capacity||16));
   const booked=Math.max(0,Number(c.booked||0));
   const s=classState(c);
   if(s==="full")return"FULL";
@@ -62,7 +62,7 @@ function esc(s){
 }
 function card(c){
   const booked=Math.max(0,Number(c.booked||0));
-  const cap=Math.max(1,Number(c.capacity||12));
+  const cap=Math.max(1,Number(c.capacity||16));
   const s=classState(c);
   const instructor=(c.instructor&&c.instructor!=="Instructor TBC")?c.instructor:"Instructor TBC";
   return '<article class="class-card '+s+'">'+
