@@ -96,7 +96,7 @@ function renderOwnerInsights(){
   if(title) title.textContent=d.month_label||"This month";
 
   const busiest=d.busiest_class
-    ? esc(d.busiest_class.day_label)+" "+esc(d.busiest_class.time)+" · "+Number(d.busiest_class.booked||0)+"/"+Number(d.busiest_class.capacity||12)
+    ? esc(d.busiest_class.day_label)+" "+esc(d.busiest_class.time)+" · "+Number(d.busiest_class.booked||0)+"/"+Number(d.busiest_class.capacity||16)
     : "No booking data yet";
 
   cards.innerHTML=
@@ -374,7 +374,7 @@ function renderAttendance(){
     return '<div class="attendance-row">'+
       '<div><strong>'+dateLabel(c.date)+' · '+c.time+'</strong><span>'+esc(c.instructor)+'</span></div>'+
       '<div><strong>'+c.booked+'</strong><span>Booked</span></div>'+
-      '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="12" value="'+c.booked+'"><span class="commission-preview" data-preview="'+key+'">Commission if closed: '+money(commissionFor(c.booked))+'</span></label>'+
+      '<label>Actual riders<input class="attendance-input" data-key="'+key+'" type="number" min="0" max="'+c.capacity+'" value="'+c.booked+'"><span class="commission-preview" data-preview="'+key+'">Commission if closed: '+money(commissionFor(c.booked))+'</span></label>'+
       '<button class="mini primary close-class" data-date="'+c.date+'" data-time="'+c.time+'" data-instructor-id="'+esc(c.instructor_id||'')+'" '+(!c.instructor_id?'disabled title="Assign an instructor first"':'')+'>CLOSE CLASS</button>'+
     '</div>';
   }).join(""):'<p class="muted">No classes to close yet.</p>';
