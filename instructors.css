@@ -67,3 +67,29 @@ body.instructor-auth-locked{visibility:hidden}
 .week-tab.active{background:#fff;color:#06070a;border-color:#fff}
 .week-tab:hover{border-color:rgba(255,255,255,.35)}
 @media(max-width:620px){.week-switcher{margin-top:16px}.week-tab{flex:1}}
+
+
+
+/* Studio expansion announcement: view-only, consistent with public site. */
+.instructor-capacity-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:19px;
+  padding:19px 24px;margin-bottom:32px;
+  border:1px solid rgba(180,130,255,.35);border-radius:16px;
+  background:
+    radial-gradient(circle at 98% 0%,rgba(251,222,83,.21),transparent 38%),
+    linear-gradient(100deg,rgba(38,86,240,.3),rgba(190,43,151,.24));
+}
+.instructor-capacity-kicker{
+  flex:none;border:1px solid rgba(255,255,255,.19);border-radius:999px;
+  padding:9px 11px;color:#fef08a;font-size:9px;font-weight:1000;letter-spacing:.13em
+}
+.instructor-capacity-message{display:grid;gap:5px;flex:1}
+.instructor-capacity-message strong{
+  font-size:clamp(17px,2.3vw,25px);font-weight:1000;letter-spacing:-.035em;line-height:1.1
+}
+.instructor-capacity-message strong em{font-style:normal;color:#fdf374}
+.instructor-capacity-message>span{font-size:12px;line-height:1.45;color:#d8daec}
+@media(max-width:760px){
+  .instructor-capacity-banner{display:grid;gap:12px;padding:17px;margin-bottom:26px}
+  .instructor-capacity-kicker{justify-self:start}
+}
