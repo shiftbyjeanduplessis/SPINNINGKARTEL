@@ -315,3 +315,34 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   .analytics-summary article{min-height:104px;padding:13px}
   .analytics-summary strong{font-size:25px}
 }
+
+
+
+/* Owner-facing studio expansion: always visible across management views. */
+.admin-capacity-banner{
+  display:flex;align-items:center;gap:17px;flex-wrap:wrap;
+  border-radius:16px;padding:16px 19px;margin-bottom:24px;color:#fff;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(255,234,129,.19),transparent 35%),
+    linear-gradient(105deg,#162ca0,#7138b9 65%,#b12b86);
+  box-shadow:0 12px 36px rgba(31,30,102,.16)
+}
+.admin-capacity-number{
+  flex:0 0 72px;height:72px;border-radius:17px;
+  display:grid;place-items:center;background:#fef08a;color:#15143d;
+  font-size:40px;font-weight:1000;letter-spacing:-.07em
+}
+.admin-capacity-copy{display:grid;gap:5px;flex:1;min-width:200px}
+.admin-capacity-copy strong{font-size:clamp(15px,1.6vw,21px);letter-spacing:-.035em;font-weight:1000}
+.admin-capacity-copy span{color:#f0eaff;font-size:11px;line-height:1.5}
+.admin-capacity-copy small{font-size:10px;color:#ffe7a2;line-height:1.45}
+.admin-capacity-stamp{
+  margin-left:auto;align-self:flex-start;padding:8px 10px;
+  border:1px solid rgba(255,255,255,.32);border-radius:999px;
+  font-size:9px;font-weight:1000;letter-spacing:.09em;white-space:nowrap
+}
+@media(max-width:640px){
+  .admin-capacity-banner{padding:14px;gap:12px}
+  .admin-capacity-number{flex-basis:56px;height:56px;font-size:31px}
+  .admin-capacity-stamp{margin-left:0}
+}
