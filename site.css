@@ -38,16 +38,6 @@ section{scroll-margin-top:82px}
 .site-header>.button{justify-self:end}
 .header-actions{display:flex;align-items:center;justify-self:end;gap:10px}
 
-.team-building-banner{
-  min-height:52px;padding:12px 20px;
-  display:flex;align-items:center;justify-content:center;
-  background:#25D366;color:#fff;text-decoration:none;text-align:center;
-  font-size:12px;font-weight:1000;letter-spacing:.055em;
-  border-bottom:1px solid rgba(255,255,255,.10)
-}
-.team-building-banner strong{font-weight:1000}
-.team-building-banner:hover{background:#2ee070}
-
 .button{
   min-height:44px;padding:0 20px;border-radius:999px;
   display:inline-flex;align-items:center;justify-content:center;
@@ -366,13 +356,11 @@ footer{
   .faq{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .team-building-banner{min-height:48px;padding:10px 12px;font-size:10px;line-height:1.25}
   .site-header{height:70px;padding:0 12px}.brand img{width:56px;height:56px}.brand strong{font-size:12px}.brand small{font-size:7px}
   .header-actions{gap:7px}
   .header-whatsapp{min-height:30px;padding:0 10px;font-size:9px;transform:none}
   .header-whatsapp strong{display:none}
   .site-header .header-actions>.button{min-height:36px;padding:0 11px;font-size:7px}
-  .team-building-banner{min-height:32px;padding:7px 10px;font-size:8px;letter-spacing:.05em;flex-wrap:wrap;gap:5px}
   .hero-copy{padding-top:42px}.hero h1{font-size:58px}.hero-actions{display:grid}.hero-actions .button{width:100%}
   .hero{min-height:560px}.hero-copy{width:100%;min-height:560px}.hero-image{min-height:560px;background-size:cover;background-position:center}
   .schedule-section,.instructor-schedule-section,.pricing,.studio,.experience,.faq{padding-left:14px;padding-right:14px}
@@ -387,42 +375,65 @@ footer{
 
 
 
-/* 16-bike studio expansion announcement — visible above the existing hero. */
+/* 16-bike launch: neon pink and yellow, no blue. */
 .bike-launch-banner{
-  display:flex;align-items:center;justify-content:space-between;gap:28px;
-  padding:18px clamp(20px,5vw,68px);
-  border-bottom:1px solid rgba(255,255,255,.24);
-  background:
-    radial-gradient(ellipse at 78% 0%,rgba(255,215,67,.26),transparent 40%),
-    linear-gradient(105deg,#182ee5 0%,#6938d8 47%,#bd298d 100%);
-  color:#fff;position:relative;isolation:isolate
+  display:grid;grid-template-columns:110px minmax(0,1fr) auto;
+  align-items:center;gap:clamp(15px,2.8vw,38px);
+  position:relative;isolation:isolate;overflow:hidden;
+  padding:23px clamp(20px,5vw,68px);
+  border-top:3px solid #fff06b;border-bottom:3px solid #fcda58;
+  background:radial-gradient(ellipse at 80% 0%,rgba(255,244,135,.22),transparent 40%),linear-gradient(108deg,#990b58 0%,#d41472 50%,#ed4173 100%);
+  color:#fff
 }
 .bike-launch-banner::after{
-  content:"";position:absolute;inset:0;z-index:-1;opacity:.15;
-  background:repeating-linear-gradient(115deg,transparent 0,transparent 28px,rgba(255,255,255,.35) 29px,transparent 30px);
-  pointer-events:none
+  content:"";position:absolute;inset:-18px -22px;z-index:-1;opacity:.12;
+  background:repeating-linear-gradient(125deg,transparent 0,transparent 27px,#fff 28px,transparent 29px);
+  transform:skewY(-3deg);pointer-events:none
 }
-.bike-launch-copy{display:grid;gap:5px;min-width:0}
-.bike-launch-eyebrow{
-  font-size:9px;letter-spacing:.18em;font-weight:950;color:#fef08a
+.bike-launch-number{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  width:106px;height:111px;padding:8px 4px;
+  color:#240d1c;background:#ffec5c;border:3px solid #240d1c;
+  box-shadow:7px 7px 0 rgba(31,8,28,.5);transform:rotate(-7deg);border-radius:10px;
 }
+.bike-launch-number span{font-size:10px;font-weight:1000;letter-spacing:.04em}
+.bike-launch-number b{font-size:76px;line-height:.84;font-weight:1000;letter-spacing:-.105em;padding-right:.11em}
+.bike-launch-number small{font-size:11px;font-weight:1000;letter-spacing:.16em}
+.bike-launch-copy{display:grid;gap:7px;min-width:0}
+.bike-launch-eyebrow{font-size:10px;letter-spacing:.19em;font-weight:1000;color:#ffef86}
 .bike-launch-copy>strong{
-  font-size:clamp(20px,3vw,35px);font-weight:1000;letter-spacing:-.035em;
-  line-height:1.08;text-wrap:balance
+  font-size:clamp(24px,3.1vw,44px);font-weight:1000;letter-spacing:-.055em;
+  line-height:1.02;text-wrap:balance
 }
-.bike-launch-copy>strong>span{color:#fdf374;white-space:nowrap}
-.bike-launch-copy p{margin:0;font-size:clamp(11px,1.1vw,14px);line-height:1.5;color:#fff1fc}
+.bike-launch-copy>strong>span{color:#ffeb58}
+.bike-launch-copy p{max-width:740px;margin:0;font-size:clamp(12px,1.08vw,15px);line-height:1.5;font-weight:650;color:#fff5f7}
 .bike-launch-action{
-  display:inline-flex;align-items:center;justify-content:center;gap:12px;
-  flex:none;min-height:44px;padding:12px 19px;border-radius:999px;
-  color:#171122;background:#fff;text-decoration:none;white-space:nowrap;
-  font-size:10px;font-weight:1000;letter-spacing:.055em;
-  box-shadow:0 7px 22px rgba(0,0,0,.17);transition:transform .15s ease,background .15s ease
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  flex:none;min-height:50px;padding:13px 19px;border-radius:999px;
+  color:#27121b;background:#ffec5c;border:2px solid #fff5a7;
+  text-decoration:none;white-space:nowrap;
+  font-size:11px;font-weight:1000;letter-spacing:.06em;
+  box-shadow:0 7px 24px rgba(35,4,24,.2);
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease
 }
-.bike-launch-action:hover{background:#fdf374;transform:translateY(-2px)}
-.bike-launch-action:focus-visible{outline:3px solid #fdf374;outline-offset:3px}
-@media(max-width:760px){
-  .bike-launch-banner{flex-direction:column;align-items:flex-start;gap:15px;padding:18px 20px}
-  .bike-launch-copy>strong{font-size:clamp(22px,5vw,30px)}
-  .bike-launch-action{min-height:40px;padding:10px 15px}
+.bike-launch-action:hover{background:#fff8ac;transform:translateY(-3px);box-shadow:0 10px 28px rgba(35,4,24,.26)}
+.bike-launch-action:focus-visible{outline:3px solid #fff;outline-offset:4px}
+@media(max-width:900px){
+  .bike-launch-banner{grid-template-columns:98px minmax(0,1fr);gap:18px}
+  .bike-launch-number{width:91px;height:99px}
+  .bike-launch-number b{font-size:68px}
+  .bike-launch-action{grid-column:2;justify-self:start;min-height:42px;padding:9px 16px}
 }
+@media(max-width:590px){
+  .bike-launch-banner{grid-template-columns:76px minmax(0,1fr);gap:14px;padding:19px 18px 20px}
+  .bike-launch-number{width:74px;height:84px;box-shadow:4px 4px 0 rgba(31,8,28,.48)}
+  .bike-launch-number span{font-size:8px}
+  .bike-launch-number b{font-size:53px}
+  .bike-launch-number small{font-size:9px}
+  .bike-launch-eyebrow{font-size:8px;letter-spacing:.12em}
+  .bike-launch-copy{gap:6px}
+  .bike-launch-copy>strong{font-size:clamp(23px,5.4vw,30px)}
+  .bike-launch-copy p{font-size:11px;line-height:1.5}
+  .bike-launch-action{grid-column:1/-1;justify-self:stretch;text-align:center}
+}
+@media(prefers-reduced-motion:reduce){.bike-launch-action{transition:none}}
