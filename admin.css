@@ -324,8 +324,8 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
   border-radius:16px;padding:16px 19px;margin-bottom:24px;color:#fff;
   background:
     radial-gradient(circle at 92% 0%,rgba(255,234,129,.19),transparent 35%),
-    linear-gradient(105deg,#162ca0,#7138b9 65%,#b12b86);
-  box-shadow:0 12px 36px rgba(31,30,102,.16)
+    linear-gradient(105deg,#821047,#b61565 55%,#ee477a);
+  box-shadow:0 12px 36px rgba(111,15,61,.20)
 }
 .admin-capacity-number{
   flex:0 0 72px;height:72px;border-radius:17px;
