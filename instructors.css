@@ -74,10 +74,10 @@ body.instructor-auth-locked{visibility:hidden}
 .instructor-capacity-banner{
   display:flex;align-items:center;justify-content:space-between;gap:19px;
   padding:19px 24px;margin-bottom:32px;
-  border:1px solid rgba(180,130,255,.35);border-radius:16px;
+  border:1px solid rgba(255,129,192,.45);border-radius:16px;
   background:
     radial-gradient(circle at 98% 0%,rgba(251,222,83,.21),transparent 38%),
-    linear-gradient(100deg,rgba(38,86,240,.3),rgba(190,43,151,.24));
+    linear-gradient(105deg,rgba(189,18,93,.38),rgba(239,76,113,.25));
 }
 .instructor-capacity-kicker{
   flex:none;border:1px solid rgba(255,255,255,.19);border-radius:999px;
