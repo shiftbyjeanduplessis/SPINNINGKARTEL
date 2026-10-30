@@ -384,3 +384,45 @@ footer{
 /* Live booking schedule — Booklink is the single source of truth */
 @media(max-width:760px){
   .booklink-live,}
+
+
+
+/* 16-bike studio expansion announcement — visible above the existing hero. */
+.bike-launch-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:28px;
+  padding:18px clamp(20px,5vw,68px);
+  border-bottom:1px solid rgba(255,255,255,.24);
+  background:
+    radial-gradient(ellipse at 78% 0%,rgba(255,215,67,.26),transparent 40%),
+    linear-gradient(105deg,#182ee5 0%,#6938d8 47%,#bd298d 100%);
+  color:#fff;position:relative;isolation:isolate
+}
+.bike-launch-banner::after{
+  content:"";position:absolute;inset:0;z-index:-1;opacity:.15;
+  background:repeating-linear-gradient(115deg,transparent 0,transparent 28px,rgba(255,255,255,.35) 29px,transparent 30px);
+  pointer-events:none
+}
+.bike-launch-copy{display:grid;gap:5px;min-width:0}
+.bike-launch-eyebrow{
+  font-size:9px;letter-spacing:.18em;font-weight:950;color:#fef08a
+}
+.bike-launch-copy>strong{
+  font-size:clamp(20px,3vw,35px);font-weight:1000;letter-spacing:-.035em;
+  line-height:1.08;text-wrap:balance
+}
+.bike-launch-copy>strong>span{color:#fdf374;white-space:nowrap}
+.bike-launch-copy p{margin:0;font-size:clamp(11px,1.1vw,14px);line-height:1.5;color:#fff1fc}
+.bike-launch-action{
+  display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  flex:none;min-height:44px;padding:12px 19px;border-radius:999px;
+  color:#171122;background:#fff;text-decoration:none;white-space:nowrap;
+  font-size:10px;font-weight:1000;letter-spacing:.055em;
+  box-shadow:0 7px 22px rgba(0,0,0,.17);transition:transform .15s ease,background .15s ease
+}
+.bike-launch-action:hover{background:#fdf374;transform:translateY(-2px)}
+.bike-launch-action:focus-visible{outline:3px solid #fdf374;outline-offset:3px}
+@media(max-width:760px){
+  .bike-launch-banner{flex-direction:column;align-items:flex-start;gap:15px;padding:18px 20px}
+  .bike-launch-copy>strong{font-size:clamp(22px,5vw,30px)}
+  .bike-launch-action{min-height:40px;padding:10px 15px}
+}
