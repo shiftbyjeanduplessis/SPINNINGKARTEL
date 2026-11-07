@@ -1070,7 +1070,35 @@ async function rebuildBooklinkSessionCounts() {
   }));
 }
 
+// One-time confirmed roster recovery for 9–14 Nov 2026. The database remains the
+// sole schedule authority; confirmed admin edits are never overwritten on restart.
+const NOVEMBER_ROSTER_RECOVERY = [["2026-11-09","05:30","Robbie"],["2026-11-09","08:00","Tammy"],["2026-11-09","17:00","Elzet"],["2026-11-09","18:00","Tammy"],["2026-11-09","19:00","Tammy"],["2026-11-10","05:30","Demi"],["2026-11-10","08:00","Tammy"],["2026-11-10","15:00","Tammy"],["2026-11-10","17:00","Tammy"],["2026-11-10","18:00","Elzet"],["2026-11-10","19:00","Robbie"],["2026-11-11","05:30","Tammy"],["2026-11-11","08:00","Tammy"],["2026-11-11","17:00","Tammy"],["2026-11-11","18:00","Tammy"],["2026-11-11","19:00","Robbie"],["2026-11-12","05:30","Demi"],["2026-11-12","08:00","Tammy"],["2026-11-12","15:00","Tammy"],["2026-11-12","17:00","Elzet"],["2026-11-12","18:00","Tammy"],["2026-11-12","19:00","Tammy"],["2026-11-13","05:30","Demi"],["2026-11-13","08:00","Tammy"],["2026-11-13","18:00","Robbie"],["2026-11-14","07:00","Tammy"],["2026-11-14","08:00","Tammy"]];
+async function recoverNovemberRoster() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const people = await client.query("SELECT id,name FROM sk_instructors WHERE lower(trim(name)) = ANY($1::text[])", [['robbie','tammy','elzet','demi']]);
+    const ids = new Map(people.rows.map(p => [String(p.name).trim().toLowerCase(), p.id]));
+    if (ids.size !== 4) throw new Error('Missing or duplicate instructor records: ' + [...ids.keys()].join(','));
+    for (const [date,time,name] of NOVEMBER_ROSTER_RECOVERY) {
+      await client.query(`
+        INSERT INTO sk_instructor_rota(service_date,start_time,instructor_id,note,updated_at,confirmed_at)
+        VALUES($1,$2,$3,NULL,now(),now())
+        ON CONFLICT(service_date,start_time) DO UPDATE
+          SET instructor_id=EXCLUDED.instructor_id, note=NULL, updated_at=now(), confirmed_at=now()
+        WHERE sk_instructor_rota.confirmed_at IS NULL
+      `,[date,time,ids.get(name.toLowerCase())]);
+    }
+    await client.query('COMMIT');
+    console.log('NOVEMBER_ROSTER_RECOVERY_COMPLETE', NOVEMBER_ROSTER_RECOVERY.length);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally { client.release(); }
+}
+
 const server = http.createServer(handler);
-rebuildBooklinkSessionCounts()
+recoverNovemberRoster()
+  .then(() => rebuildBooklinkSessionCounts())
   .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
