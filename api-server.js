@@ -1073,6 +1073,30 @@ async function rebuildBooklinkSessionCounts() {
 // One-time confirmed roster recovery for 9–14 Nov 2026. The database remains the
 // sole schedule authority; confirmed admin edits are never overwritten on restart.
 const NOVEMBER_ROSTER_RECOVERY = [["2026-11-09","05:30","Robbie"],["2026-11-09","08:00","Tammy"],["2026-11-09","17:00","Elzet"],["2026-11-09","18:00","Tammy"],["2026-11-09","19:00","Tammy"],["2026-11-10","05:30","Demi"],["2026-11-10","08:00","Tammy"],["2026-11-10","15:00","Tammy"],["2026-11-10","17:00","Tammy"],["2026-11-10","18:00","Elzet"],["2026-11-10","19:00","Robbie"],["2026-11-11","05:30","Tammy"],["2026-11-11","08:00","Tammy"],["2026-11-11","17:00","Tammy"],["2026-11-11","18:00","Tammy"],["2026-11-11","19:00","Robbie"],["2026-11-12","05:30","Demi"],["2026-11-12","08:00","Tammy"],["2026-11-12","15:00","Tammy"],["2026-11-12","17:00","Elzet"],["2026-11-12","18:00","Tammy"],["2026-11-12","19:00","Tammy"],["2026-11-13","05:30","Demi"],["2026-11-13","08:00","Tammy"],["2026-11-13","18:00","Robbie"],["2026-11-14","07:00","Tammy"],["2026-11-14","08:00","Tammy"]];
+// Booklink operator removed the recurring Friday 17:00 and 19:00 sessions.
+// Mirror this explicit Booklink change in the local read model used by all three views.
+async function syncFridayBooklinkRemovals() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`
+      UPDATE sk_weekly_slots SET active=false
+      WHERE weekday=5 AND start_time IN (TIME '17:00',TIME '19:00')
+    `);
+    await client.query(`
+      UPDATE sk_special_sessions SET active=false
+      WHERE service_date >= DATE '2026-11-13'
+        AND EXTRACT(ISODOW FROM service_date)=5
+        AND start_time IN (TIME '17:00',TIME '19:00')
+    `);
+    await client.query('COMMIT');
+    console.log('BOOKLINK_FRIDAY_REMOVALS_SYNCED');
+  } catch(e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally { client.release(); }
+}
+
 async function recoverNovemberRoster() {
   const client = await pool.connect();
   try {
@@ -1109,6 +1133,7 @@ async function recoverNovemberRoster() {
 
 const server = http.createServer(handler);
 recoverNovemberRoster()
+  .then(() => syncFridayBooklinkRemovals())
   .then(() => rebuildBooklinkSessionCounts())
   .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
