@@ -1089,6 +1089,16 @@ async function recoverNovemberRoster() {
         WHERE sk_instructor_rota.confirmed_at IS NULL
       `,[date,time,ids.get(name.toLowerCase())]);
     }
+    // A date-specific extra class must exist as a session as well as a rota entry.
+    // Do not change recurring weekly slots or Booklink's own booking structure.
+    await client.query(`
+      INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
+      SELECT DATE '2026-11-12', TIME '15:00', 45, 16, 'Spinning Class', true
+      WHERE NOT EXISTS (
+        SELECT 1 FROM sk_special_sessions
+        WHERE service_date=DATE '2026-11-12' AND start_time=TIME '15:00'
+      )
+    `);
     await client.query('COMMIT');
     console.log('NOVEMBER_ROSTER_RECOVERY_COMPLETE', NOVEMBER_ROSTER_RECOVERY.length);
   } catch (e) {
