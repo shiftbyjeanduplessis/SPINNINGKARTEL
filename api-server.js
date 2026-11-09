@@ -692,6 +692,18 @@ async function handler(req, res) {
       },origin);
     }
 
+    if (req.method === 'GET' && path === '/api/admin/bookings-last-30-days') {
+      const to=todayZA();
+      const from=addDays(to,-29);
+      const q=await pool.query(`
+        SELECT COALESCE(SUM(GREATEST(booked_count,0)),0)::int AS bookings,
+               COUNT(*) FILTER (WHERE booked_count > 0)::int AS booked_sessions
+        FROM sk_session_stats
+        WHERE service_date BETWEEN $1 AND $2
+      `,[from,to]);
+      return json(res,200,{from,to,bookings:Number(q.rows[0].bookings),booked_sessions:Number(q.rows[0].booked_sessions),source:'booklink_webhook_session_counts'},origin);
+    }
+
     if (req.method === 'GET' && path === '/api/admin/booking-weeks') {
       const weeks = Math.min(16, Math.max(1, Number(u.searchParams.get('weeks') || 8)));
       const currentStart = (() => {
