@@ -74,6 +74,21 @@ function renderWeeklyBookings(){
   }).join("");
 }
 
+async function calculateLast30Bookings(){
+  const button=$("#calculateLast30Bookings");
+  const result=$("#last30BookingsResult");
+  if(!button||!result)return;
+  button.disabled=true;
+  result.textContent="Calculating…";
+  try {
+    const data=await api("/api/admin/bookings-last-30-days");
+    result.textContent=Number(data.bookings||0).toLocaleString("en-ZA")+" booked seats · "+dateLabel(data.from)+" – "+dateLabel(data.to);
+  } catch(e) {
+    result.textContent="Unable to calculate: "+(e.message||"please retry");
+  } finally { button.disabled=false; }
+}
+$("#calculateLast30Bookings")?.addEventListener("click",calculateLast30Bookings);
+
 async function refreshWeeklyBookings(){
   const data=await api("/api/admin/booking-weeks?weeks=8");
   state.bookingWeeks=data.weeks||[];
