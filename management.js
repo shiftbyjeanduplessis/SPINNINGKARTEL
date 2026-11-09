@@ -81,8 +81,15 @@ async function calculateLast30Bookings(){
   button.disabled=true;
   result.textContent="Calculating…";
   try {
-    const data=await api("/api/admin/bookings-last-30-days");
-    result.textContent=Number(data.bookings||0).toLocaleString("en-ZA")+" booked seats · "+dateLabel(data.from)+" – "+dateLabel(data.to);
+    // Reuse the management page's existing weekly-booking dataset.
+    // Request a fresh six-week window so the rolling period includes all 30 days.
+    const data=await api("/api/admin/booking-weeks?weeks=6");
+    const to=today();
+    const from=addDays(to,-29);
+    const sessions=(data.weeks||[]).flatMap(w=>w.classes||[]);
+    const total=sessions.filter(c=>c.date>=from&&c.date<=to)
+      .reduce((sum,c)=>sum+Number(c.booked||0),0);
+    result.textContent=total.toLocaleString("en-ZA")+" booked seats · "+dateLabel(from)+" – "+dateLabel(to);
   } catch(e) {
     result.textContent="Unable to calculate: "+(e.message||"please retry");
   } finally { button.disabled=false; }
