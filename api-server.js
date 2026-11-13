@@ -208,6 +208,7 @@ async function classRows(days, startDate) {
       seen.add(time);
       const rr = rota.get(key);
       const ss = stats.get(key);
+      const matchingSpecial=(specialsByDate.get(date)||[]).find(x=>x.start_time.slice(0,5)===time);
       const capacity = capacityForDate(date);
       const booked = Number(ss?.booked_count ?? 0);
 
@@ -225,7 +226,7 @@ async function classRows(days, startDate) {
         instructor_id: rr?.instructor_id || null,
         instructor: rr?.instructor_name || 'Instructor TBC',
         instructor_note: displayInstructorNote(rr?.note),
-        class_label: null
+        class_label: matchingSpecial?.label || null
       });
     }
 
@@ -1085,6 +1086,9 @@ async function rebuildBooklinkSessionCounts() {
 // One-time confirmed roster recovery for 9–14 Nov 2026. The database remains the
 // sole schedule authority; confirmed admin edits are never overwritten on restart.
 const NOVEMBER_ROSTER_RECOVERY = [["2026-11-09","05:30","Robbie"],["2026-11-09","08:00","Tammy"],["2026-11-09","17:00","Elzet"],["2026-11-09","18:00","Tammy"],["2026-11-09","19:00","Tammy"],["2026-11-10","05:30","Demi"],["2026-11-10","08:00","Tammy"],["2026-11-10","15:00","Tammy"],["2026-11-10","17:00","Tammy"],["2026-11-10","18:00","Elzet"],["2026-11-10","19:00","Robbie"],["2026-11-11","05:30","Tammy"],["2026-11-11","08:00","Tammy"],["2026-11-11","17:00","Tammy"],["2026-11-11","18:00","Tammy"],["2026-11-11","19:00","Robbie"],["2026-11-12","05:30","Demi"],["2026-11-12","08:00","Tammy"],["2026-11-12","15:00","Tammy"],["2026-11-12","17:00","Elzet"],["2026-11-12","18:00","Tammy"],["2026-11-12","19:00","Tammy"],["2026-11-13","05:30","Demi"],["2026-11-13","08:00","Tammy"],["2026-11-13","18:00","Robbie"],["2026-11-14","07:00","Tammy"],["2026-11-14","08:00","Tammy"]];
+
+// Confirmed week of 16–21 November 2026, shared by public, instructor and admin views.
+const NEXT_WEEK_ROSTER = [["2026-11-16","05:30","Tammy"],["2026-11-16","08:00","Tammy"],["2026-11-16","17:00","Elzet"],["2026-11-16","18:00","Tammy"],["2026-11-16","19:00","Robbie"],["2026-11-17","05:30","Demi"],["2026-11-17","08:00","Tammy"],["2026-11-17","15:00","Tammy"],["2026-11-17","17:00","Elzet"],["2026-11-17","18:00","Tammy"],["2026-11-17","19:00","Robbie"],["2026-11-18","05:30","Demi"],["2026-11-18","08:00","Tammy"],["2026-11-18","15:00","Tammy"],["2026-11-18","17:00","Tammy"],["2026-11-18","18:00","Robbie"],["2026-11-18","19:00","Tammy"],["2026-11-19","05:30","Demi"],["2026-11-19","08:00","Tammy"],["2026-11-19","15:00","Tammy"],["2026-11-19","17:00","Tammy"],["2026-11-19","18:00","Elzet"],["2026-11-19","19:00","Tammy"],["2026-11-20","05:30","Tammy"],["2026-11-20","08:00","Tammy"],["2026-11-21","07:00","Tammy"],["2026-11-21","08:00","Tammy"]];
 // Booklink operator removed the recurring Friday 17:00 and 19:00 sessions.
 // Mirror this explicit Booklink change in the local read model used by all three views.
 async function syncFridayBooklinkRemovals() {
@@ -1125,6 +1129,26 @@ async function recoverNovemberRoster() {
         WHERE sk_instructor_rota.confirmed_at IS NULL
       `,[date,time,ids.get(name.toLowerCase())]);
     }
+    for (const [date,time,name] of NEXT_WEEK_ROSTER) {
+      await client.query(`
+        INSERT INTO sk_instructor_rota(service_date,start_time,instructor_id,note,updated_at,confirmed_at)
+        VALUES($1,$2,$3,NULL,now(),now())
+        ON CONFLICT(service_date,start_time) DO UPDATE
+          SET instructor_id=EXCLUDED.instructor_id,note=NULL,updated_at=now(),confirmed_at=now()
+      `,[date,time,ids.get(name.toLowerCase())]);
+    }
+    // Explicit Wednesday 15:00 class for the new week.
+    await client.query(`
+      INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
+      VALUES(DATE '2026-11-18',TIME '15:00',45,16,'Spinning Class',true)
+      ON CONFLICT DO NOTHING
+    `);
+    // Friday evening is a themed event; it is not an assigned instructor.
+    await client.query(`
+      INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
+      VALUES(DATE '2026-11-20',TIME '18:00',45,16,'Pizza evening',true)
+      ON CONFLICT DO NOTHING
+    `);
     // A date-specific extra class must exist as a session as well as a rota entry.
     // Do not change recurring weekly slots or Booklink's own booking structure.
     await client.query(`
