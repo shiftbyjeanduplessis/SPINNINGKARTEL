@@ -204,6 +204,8 @@ async function classRows(days, startDate) {
 
     for (const s of (slotsByDay.get(wd) || [])) {
       const time = s.start_time.slice(0,5);
+      // Friday 20 November's 18:00 pizza evening was cancelled.
+      if (date === '2026-11-20' && time === '18:00') continue;
       const key = date + '|' + time;
       seen.add(time);
       const rr = rota.get(key);
@@ -1143,11 +1145,10 @@ async function recoverNovemberRoster() {
       VALUES(DATE '2026-11-18',TIME '15:00',45,16,'Spinning Class',true)
       ON CONFLICT DO NOTHING
     `);
-    // Friday evening is a themed event; it is not an assigned instructor.
+    // Cancel only the Friday 20 Nov pizza evening; retain other Fridays' normal classes.
     await client.query(`
-      INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
-      VALUES(DATE '2026-11-20',TIME '18:00',45,16,'Pizza evening',true)
-      ON CONFLICT DO NOTHING
+      UPDATE sk_special_sessions SET active=false
+      WHERE service_date=DATE '2026-11-20' AND start_time=TIME '18:00'
     `);
     // Historical correction: Tammy taught Friday 13 Nov at 05:30, not Demi.
     // Only correct the original Demi assignment; preserve subsequent admin changes.
