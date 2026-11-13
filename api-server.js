@@ -1149,6 +1149,14 @@ async function recoverNovemberRoster() {
       VALUES(DATE '2026-11-20',TIME '18:00',45,16,'Pizza evening',true)
       ON CONFLICT DO NOTHING
     `);
+    // Historical correction: Tammy taught Friday 13 Nov at 05:30, not Demi.
+    // Only correct the original Demi assignment; preserve subsequent admin changes.
+    await client.query(`
+      UPDATE sk_instructor_rota r
+      SET instructor_id=$1,note=NULL,updated_at=now(),confirmed_at=now()
+      WHERE r.service_date=DATE '2026-11-13' AND r.start_time=TIME '05:30'
+        AND r.instructor_id=$2
+    `,[ids.get('tammy'),ids.get('demi')]);
     // A date-specific extra class must exist as a session as well as a rota entry.
     // Do not change recurring weekly slots or Booklink's own booking structure.
     await client.query(`
