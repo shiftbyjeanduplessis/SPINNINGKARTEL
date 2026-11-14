@@ -206,6 +206,8 @@ async function classRows(days, startDate) {
       const time = s.start_time.slice(0,5);
       // Friday 20 November's 18:00 pizza evening was cancelled.
       if (date === '2026-11-20' && time === '18:00') continue;
+      // Booklink removed Saturday 14 Nov 07:00; do not display this date-specific class.
+      if (date === '2026-11-14' && time === '07:00') continue;
       const key = date + '|' + time;
       seen.add(time);
       const rr = rota.get(key);
@@ -1149,6 +1151,11 @@ async function recoverNovemberRoster() {
     await client.query(`
       UPDATE sk_special_sessions SET active=false
       WHERE service_date=DATE '2026-11-20' AND start_time=TIME '18:00'
+    `);
+    // Booklink cancelled the Saturday 14 Nov 07:00 class only.
+    await client.query(`
+      UPDATE sk_special_sessions SET active=false
+      WHERE service_date=DATE '2026-11-14' AND start_time=TIME '07:00'
     `);
     // Historical correction: Tammy taught Friday 13 Nov at 05:30, not Demi.
     // Only correct the original Demi assignment; preserve subsequent admin changes.
