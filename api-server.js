@@ -258,6 +258,28 @@ async function classRows(days, startDate) {
       });
     }
   }
+  // A confirmed Booklink booking is evidence of a real dated class, even if
+  // its weekly template is off or it is an extra one-off. Do not invent empty
+  // classes from historical bookings: only positive current seat counts qualify.
+  const displayedKeys = new Set(rows.map(c => c.date+'|'+c.time));
+  for (const ss of statsQ.rows) {
+    const date = ss.service_date;
+    const time = String(ss.start_time).slice(0,5);
+    const key = date + '|' + time;
+    const booked = Number(ss.booked_count || 0);
+    if (booked <= 0 || displayedKeys.has(key)) continue;
+    const rr = rota.get(key);
+    const capacity = capacityForDate(date);
+    rows.push({
+      id:date+'_'+time.replace(':',''),date,time,duration:45,rate:70,
+      capacity,booked,status:statusFor(booked,capacity),
+      instructor_id:rr?.instructor_id || null,
+      instructor:rr?.instructor_name || 'Instructor TBC',
+      instructor_note:displayInstructorNote(rr?.note),class_label:null
+    });
+    displayedKeys.add(key);
+  }
+
   // Booklink session webhooks override the recurring local template for any
   // date/time they mention. Existing local slots remain a fallback until the
   // complete Booklink session feed is available. Rota remains our instructor
