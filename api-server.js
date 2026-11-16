@@ -258,6 +258,73 @@ async function classRows(days, startDate) {
       });
     }
   }
+  // Booklink session webhooks override the recurring local template for any
+  // date/time they mention. Existing local slots remain a fallback until the
+  // complete Booklink session feed is available. Rota remains our instructor
+  // assignment source: Booklink's team_member_name is not a coach assignment.
+  const sessionEvents = await pool.query(`
+    SELECT event_type,payload FROM sk_webhook_events
+    WHERE event_type IN ('session.created','session.updated','session.cancelled','session.deleted')
+      AND received_at >= now() - interval '120 days'
+    ORDER BY id ASC
+  `);
+  if (sessionEvents.rowCount) {
+    const bySession = new Map();
+    for (const e of sessionEvents.rows) {
+      const envelope = e.payload || {};
+      const data = envelope.data || {};
+      if (!data.id || !isSpinningBooking(data)) continue;
+      const dt = eventDateTime(data);
+      if (!dt) continue;
+      const key = dt.date + '|' + dt.time;
+      const id = String(data.id);
+      let entry = bySession.get(id);
+      if (!entry) {
+        entry = { touched:new Set(),latest:null,updated:0,delivered:0 };
+        bySession.set(id,entry);
+      }
+      entry.touched.add(key);
+      const updatedAt = Date.parse(data.updated || envelope.created || '') || 0;
+      const deliveredAt = Date.parse(envelope.created || '') || 0;
+      if (!entry.latest || updatedAt > entry.updated ||
+          (updatedAt === entry.updated && deliveredAt >= entry.delivered)) {
+        entry.latest = {eventType:e.event_type,data,dt,key};
+        entry.updated = updatedAt;
+        entry.delivered = deliveredAt;
+      }
+    }
+    const suppressed = new Set();
+    const active = new Map();
+    for (const entry of bySession.values()) {
+      for (const key of entry.touched) suppressed.add(key);
+      const last = entry.latest;
+      if (!last || ['session.deleted','session.cancelled'].includes(last.eventType) ||
+          last.data.status === 'cancelled') continue;
+      active.set(last.key,last);
+    }
+    const keyed = new Map(rows.map(c => [c.date+'|'+c.time,c]));
+    for (const key of suppressed) keyed.delete(key);
+    for (const [key,last] of active) {
+      const {data,dt} = last;
+      if (dt.date < from || dt.date > to) continue;
+      const prior = rows.find(c => c.date === dt.date && c.time === dt.time);
+      const rr = rota.get(key);
+      const ss = stats.get(key);
+      const capacity = Math.max(1,Number(data.capacity || prior?.capacity || capacityForDate(dt.date)));
+      const booked = Math.max(0,Number(data.seats_booked ?? ss?.booked_count ?? 0));
+      keyed.set(key,{
+        id:dt.date+'_'+dt.time.replace(':',''),date:dt.date,time:dt.time,
+        duration:prior?.duration || 45,rate:70,capacity,booked,
+        status:statusFor(booked,capacity),
+        instructor_id:rr?.instructor_id || null,
+        instructor:rr?.instructor_name || 'Instructor TBC',
+        instructor_note:displayInstructorNote(rr?.note),
+        class_label:data.name || prior?.class_label || null
+      });
+    }
+    rows.length = 0;
+    rows.push(...keyed.values());
+  }
   rows.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   return rows;
 }
@@ -387,6 +454,8 @@ async function handleBooklink(req, res, origin) {
       if (bookingEvents.has(eventType)) {
         await rebuildBooklinkSessionCounts();
         note = 'reconciled ' + eventType;
+      } else if (eventType.startsWith('session.')) {
+        note = 'session timetable recorded';
       } else {
         note = 'ignored event';
       }
