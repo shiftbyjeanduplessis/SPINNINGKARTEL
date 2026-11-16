@@ -1139,12 +1139,21 @@ async function recoverNovemberRoster() {
         VALUES($1,$2,$3,NULL,now(),now())
         ON CONFLICT(service_date,start_time) DO UPDATE
           SET instructor_id=EXCLUDED.instructor_id,note=NULL,updated_at=now(),confirmed_at=now()
+        WHERE sk_instructor_rota.confirmed_at IS NULL
       `,[date,time,ids.get(name.toLowerCase())]);
     }
     // Explicit Wednesday 15:00 class for the new week.
     await client.query(`
       INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
       VALUES(DATE '2026-11-18',TIME '15:00',45,16,'Spinning Class',true)
+      ON CONFLICT DO NOTHING
+    `);
+    // Thursday 19 Nov 15:00 has confirmed Booklink bookings; show this specific
+    // class without reactivating the entire Thursday 15:00 weekly template.
+    // ON CONFLICT DO NOTHING preserves later manual cancellations or edits.
+    await client.query(`
+      INSERT INTO sk_special_sessions(service_date,start_time,duration_minutes,capacity,label,active)
+      VALUES(DATE '2026-11-19',TIME '15:00',45,16,'Spinning Class',true)
       ON CONFLICT DO NOTHING
     `);
     // Cancel only the Friday 20 Nov pizza evening; retain other Fridays' normal classes.
