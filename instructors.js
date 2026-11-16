@@ -25,7 +25,7 @@ function addDays(date,n){
 }
 function weekStart(date){
   const d=new Date(date+"T12:00:00Z");
-  return addDays(date,-d.getUTCDay());
+  return addDays(date,-((d.getUTCDay()+6)%7)); // Monday is day one
 }
 function prettyDate(date){
   return new Date(date+"T12:00:00+02:00").toLocaleDateString("en-ZA",{weekday:"long",day:"numeric",month:"long"});
