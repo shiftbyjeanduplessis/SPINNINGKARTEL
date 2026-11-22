@@ -208,6 +208,8 @@ async function classRows(days, startDate) {
       if (date === '2026-11-20' && time === '18:00') continue;
       // Booklink removed Saturday 14 Nov 07:00; do not display this date-specific class.
       if (date === '2026-11-14' && time === '07:00') continue;
+      // Saturday 10:00 is no longer on the published Spinning Kartel schedule.
+      if (wd === 6 && time === '10:00') continue;
       const key = date + '|' + time;
       seen.add(time);
       const rr = rota.get(key);
@@ -1208,6 +1210,30 @@ async function syncFridayBooklinkRemovals() {
   } finally { client.release(); }
 }
 
+// Saturday 10:00 has been removed from the studio timetable. Disable any
+// recurring slot and existing future one-off sessions so every local view agrees.
+async function syncSaturdayTenRemoval() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`
+      UPDATE sk_weekly_slots SET active=false
+      WHERE weekday=6 AND start_time=TIME '10:00'
+    `);
+    await client.query(`
+      UPDATE sk_special_sessions SET active=false
+      WHERE service_date >= DATE '2026-11-22'
+        AND EXTRACT(ISODOW FROM service_date)=6
+        AND start_time=TIME '10:00'
+    `);
+    await client.query('COMMIT');
+    console.log('SATURDAY_1000_REMOVAL_SYNCED');
+  } catch(e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally { client.release(); }
+}
+
 async function recoverNovemberRoster() {
   const client = await pool.connect();
   try {
@@ -1286,6 +1312,7 @@ async function recoverNovemberRoster() {
 const server = http.createServer(handler);
 recoverNovemberRoster()
   .then(() => syncFridayBooklinkRemovals())
+  .then(() => syncSaturdayTenRemoval())
   .then(() => rebuildBooklinkSessionCounts())
   .catch(e => console.error('BOOKLINK_COUNT_REBUILD_ERROR', e))
   .finally(() => server.listen(PORT, '0.0.0.0', () => console.log('Spinning Kartel API listening on ' + PORT)));
