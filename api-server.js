@@ -10,6 +10,44 @@ const SESSION_SECRET = String(process.env.SESSION_SECRET || '');
 const ADMIN_SESSION_VERSION = 2; // Reject tokens created before view-only instructor access was restored.
 const BOOKLINK_WEBHOOK_SECRET = String(process.env.BOOKLINK_WEBHOOK_SECRET || '');
 const BOOKLINK_SERVICE_ID = String(process.env.BOOKLINK_SERVICE_ID || '');
+const BOOKLINK_API_KEY = String(process.env.BOOKLINK_API_KEY || '');
+const BOOKLINK_FEED_URL = 'https://api.booklink.co.za/session/feed';
+const BOOKLINK_FEED_CACHE_MS = 2 * 60 * 1000;
+let booklinkFeedCache = null;
+let booklinkFeedPending = null;
+
+// Booklink's authenticated read-only feed is the authoritative future timetable.
+// An in-memory snapshot keeps the public, instructor and admin views consistent.
+async function getBooklinkSessionFeed() {
+  if (!BOOKLINK_API_KEY) return null;
+  const now = Date.now();
+  if (booklinkFeedCache && now - booklinkFeedCache.fetchedAt < BOOKLINK_FEED_CACHE_MS) {
+    return booklinkFeedCache;
+  }
+  if (booklinkFeedPending) return booklinkFeedPending;
+  booklinkFeedPending = (async () => {
+    const start = todayZA();
+    const end = addDays(start, 60);
+    const url = new URL(BOOKLINK_FEED_URL);
+    url.searchParams.set('from', start + 'T00:00:00+02:00');
+    url.searchParams.set('to', end + 'T00:00:00+02:00');
+    const response = await fetch(url, {
+      headers: { Authorization: 'Bearer ' + BOOKLINK_API_KEY },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!response.ok) throw new Error('Booklink session feed HTTP ' + response.status);
+    const payload = await response.json();
+    if (!Array.isArray(payload.sessions)) throw new Error('Invalid Booklink session feed payload');
+    booklinkFeedCache = { sessions: payload.sessions, from:start, to:end, fetchedAt:Date.now(), asOf:payload.as_of };
+    return booklinkFeedCache;
+  })().catch(error => {
+    console.error('BOOKLINK_SESSION_FEED_ERROR', error.message);
+    // Prefer the last good authoritative snapshot to the old local timetable.
+    return booklinkFeedCache;
+  }).finally(() => { booklinkFeedPending = null; });
+  return booklinkFeedPending;
+}
+
 // Studio expansion effective 29 October 2026. Keep historical classes at 12.
 const CAPACITY_CHANGED_ON = '2026-10-29';
 const CURRENT_CLASS_CAPACITY = 16;
@@ -348,6 +386,39 @@ async function classRows(days, startDate) {
     }
     rows.length = 0;
     rows.push(...keyed.values());
+  }
+  // Replace the locally generated upcoming timetable with Booklink's complete
+  // dated session snapshot. Missing or deleted sessions must not reappear as
+  // ghost slots from the local weekly template or old booking counters.
+  const feed = await getBooklinkSessionFeed();
+  if (feed) {
+    const byKey = new Map();
+    for (const session of feed.sessions) {
+      if (!isSpinningBooking(session)) continue;
+      if (session.status !== 'scheduled') continue;
+      const dt = eventDateTime(session);
+      if (!dt || dt.date < feed.from || dt.date >= feed.to || dt.date < from || dt.date > to) continue;
+      const key = dt.date + '|' + dt.time;
+      const rr = rota.get(key);
+      const capacity = Math.max(1,Number(session.capacity || capacityForDate(dt.date)));
+      const booked = Math.max(0,Number(session.seats_booked ?? 0));
+      const endAt = session.end_time ? Date.parse(session.end_time) : NaN;
+      const startAt = session.start_time ? Date.parse(session.start_time) : NaN;
+      const duration = Number.isFinite(endAt-startAt) && endAt>startAt ?
+        Math.round((endAt-startAt)/60000) : 45;
+      byKey.set(key, {
+        id:dt.date+'_'+dt.time.replace(':',''),date:dt.date,time:dt.time,
+        duration,rate:70,capacity,booked,status:statusFor(booked,capacity),
+        instructor_id:rr?.instructor_id || null,
+        instructor:rr?.instructor_name || 'Instructor TBC',
+        instructor_note:displayInstructorNote(rr?.note),
+        class_label:session.name || session.service_name || 'Spinning Class'
+      });
+    }
+    // Preserve past and out-of-feed-window classes for historical analytics.
+    const pastOrOutside = rows.filter(c => c.date < feed.from || c.date >= feed.to);
+    rows.length = 0;
+    rows.push(...pastOrOutside,...byKey.values());
   }
   rows.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   return rows;
