@@ -550,7 +550,9 @@ async function handleBooklink(req, res, origin) {
         await rebuildBooklinkSessionCounts();
         note = 'reconciled ' + eventType;
       } else if (eventType.startsWith('session.')) {
-        note = 'session timetable recorded';
+        // Refresh the authoritative feed on the next view after timetable changes.
+        booklinkFeedCache = null;
+        note = 'session timetable recorded; feed invalidated';
       } else {
         note = 'ignored event';
       }
