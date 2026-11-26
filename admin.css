@@ -318,31 +318,26 @@ dialog{border:0;background:transparent;padding:0;max-width:none}dialog::backdrop
 
 
 
-/* Owner-facing studio expansion: always visible across management views. */
-.admin-capacity-banner{
-  display:flex;align-items:center;gap:17px;flex-wrap:wrap;
-  border-radius:16px;padding:16px 19px;margin-bottom:24px;color:#fff;
-  background:
-    radial-gradient(circle at 92% 0%,rgba(255,234,129,.19),transparent 35%),
-    linear-gradient(105deg,#821047,#b61565 55%,#ee477a);
-  box-shadow:0 12px 36px rgba(111,15,61,.20)
+/* Retire the old announcement, including cached markup. */
+.admin-capacity-banner{display:none!important}
+
+/* Two rows, shared scale, no horizontal scrolling. */
+.weekly-booking-chart{
+  display:grid;grid-template-columns:repeat(var(--week-columns,4),minmax(0,1fr));
+  align-items:end;justify-content:stretch;gap:18px 10px;
+  width:100%;min-width:0;min-height:0;overflow:visible;padding:12px 0 14px;
 }
-.admin-capacity-number{
-  flex:0 0 72px;height:72px;border-radius:17px;
-  display:grid;place-items:center;background:#fef08a;color:#15143d;
-  font-size:40px;font-weight:1000;letter-spacing:-.07em
-}
-.admin-capacity-copy{display:grid;gap:5px;flex:1;min-width:200px}
-.admin-capacity-copy strong{font-size:clamp(15px,1.6vw,21px);letter-spacing:-.035em;font-weight:1000}
-.admin-capacity-copy span{color:#f0eaff;font-size:11px;line-height:1.5}
-.admin-capacity-copy small{font-size:10px;color:#ffe7a2;line-height:1.45}
-.admin-capacity-stamp{
-  margin-left:auto;align-self:flex-start;padding:8px 10px;
-  border:1px solid rgba(255,255,255,.32);border-radius:999px;
-  font-size:9px;font-weight:1000;letter-spacing:.09em;white-space:nowrap
-}
-@media(max-width:640px){
-  .admin-capacity-banner{padding:14px;gap:12px}
-  .admin-capacity-number{flex-basis:56px;height:56px;font-size:31px}
-  .admin-capacity-stamp{margin-left:0}
+.week-bar-item{min-width:0;max-width:none;width:100%;grid-template-rows:22px 150px 26px 12px;gap:4px}
+.week-bar-item strong{font-size:10px;line-height:1.15;letter-spacing:0;white-space:normal;overflow-wrap:normal;align-self:center}
+.week-bar-item span{font-size:8px;line-height:1}
+.week-bar-fill{min-height:0}
+.week-bar-item.future .week-bar-fill{background:linear-gradient(180deg,#7c9ce8,#b8a4e9)}
+@media(max-width:760px){
+  .weekly-bookings-panel{padding-inline:12px}
+  .weekly-booking-chart{gap:16px 4px}
+  .week-bar-item{grid-template-rows:18px 112px 28px 10px;gap:3px;min-width:0}
+  .week-bar-track{height:112px}
+  .week-bar-value{font-size:10px}
+  .week-bar-item strong{font-size:9px}
+  .week-bar-item span{font-size:7px}
 }

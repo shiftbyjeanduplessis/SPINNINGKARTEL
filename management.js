@@ -30,18 +30,27 @@ function shortWeekLabel(d){
   return new Date(d+"T12:00:00").toLocaleDateString("en-ZA",{day:"numeric",month:"short"});
 }
 
-function renderWeeklyBookings(){
+function currentBookingWeek(){
+  const date=today();
+  return addDays(date,-new Date(date+"T12:00:00Z").getUTCDay());
+}
+function displayedBookingWeeks(){
   const allWeeks=state.bookingWeeks||[];
   const firstReal=allWeeks.findIndex(w=>Number(w.bookings||0)>0);
-  const weeks=firstReal>=0?allWeeks.slice(firstReal):(allWeeks.length?allWeeks.slice(-1):[]);
+  const currentIndex=allWeeks.findIndex(w=>w.week_start===currentBookingWeek());
+  const start=firstReal<0?Math.max(0,currentIndex):currentIndex<0?firstReal:Math.min(firstReal,currentIndex);
+  return allWeeks.slice(start);
+}
+function renderWeeklyBookings(){
+  const weeks=displayedBookingWeeks();
   const chart=$("#weeklyBookingChart");
   const summary=$("#weeklyBookingSummary");
   const label=$("#weeklyBookingLabel");
 
-  if(label) label.textContent="Sunday–Saturday booking week";
+  if(label) label.textContent="Sunday–Saturday booking weeks · future bookings shown as booked so far";
 
   const total=weeks.reduce((s,w)=>s+Number(w.bookings||0),0);
-  const current=weeks[weeks.length-1]||null;
+  const current=weeks.find(w=>w.week_start===currentBookingWeek())||null;
   const latest=Number(current?.bookings||0);
   // Studio's public classes run Mon–Sat; Sunday is the rollover day.
   const range=current?dateLabel(addDays(current.week_start,1))+' – '+dateLabel(addDays(current.week_start,6)):'';
@@ -61,15 +70,16 @@ function renderWeeklyBookings(){
   }
 
   const max=Math.max(1,...weeks.map(w=>Number(w.bookings||0)));
-  chart.innerHTML=weeks.map((w,idx)=>{
+  chart.style.setProperty("--week-columns",String(Math.ceil(weeks.length/2)));
+  chart.innerHTML=weeks.map(w=>{
     const bookings=Number(w.bookings||0);
-    const height=Math.max(3,Math.round(bookings/max*100));
-    const active=idx===weeks.length-1?" current":"";
+    const height=bookings>0?Math.max(3,Math.round(bookings/max*100)):0;
+    const active=w.week_start===currentBookingWeek()?" current":w.week_start>currentBookingWeek()?" future":"";
     return '<div class="week-bar-item'+active+'" title="'+bookings+' bookings">'+
       '<div class="week-bar-value">'+bookings+'</div>'+
       '<div class="week-bar-track"><div class="week-bar-fill" style="height:'+height+'%"></div></div>'+
       '<strong>'+shortWeekLabel(w.week_start)+'</strong>'+
-      '<span>WEEK</span>'+
+      '<span>'+(active===" current"?"NOW":active===" future"?"AHEAD":"WEEK")+'</span>'+
     '</div>';
   }).join("");
 }
@@ -84,9 +94,7 @@ async function calculateLast30Bookings(){
     // Sum exactly the weekly bars displayed in the management graph.
     // Do not trim to an arbitrary rolling 30-day window.
     await refreshWeeklyBookings();
-    const allWeeks=state.bookingWeeks||[];
-    const firstReal=allWeeks.findIndex(w=>Number(w.bookings||0)>0);
-    const weeks=firstReal>=0?allWeeks.slice(firstReal):(allWeeks.length?allWeeks.slice(-1):[]);
+    const weeks=displayedBookingWeeks();
     const total=weeks.reduce((sum,w)=>sum+Number(w.bookings||0),0);
     result.textContent=total.toLocaleString("en-ZA")+" booked seats · all "+weeks.length+" displayed weeks";
   } catch(e) {
@@ -96,7 +104,7 @@ async function calculateLast30Bookings(){
 $("#calculateLast30Bookings")?.addEventListener("click",calculateLast30Bookings);
 
 async function refreshWeeklyBookings(){
-  const data=await api("/api/admin/booking-weeks?weeks=8");
+  const data=await api("/api/admin/booking-weeks?weeks=16&through=2027-01-30");
   state.bookingWeeks=data.weeks||[];
   renderWeeklyBookings();
 }

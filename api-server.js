@@ -885,7 +885,17 @@ async function handler(req, res) {
         return d.toISOString().slice(0,10);
       })();
       const firstStart = addDays(currentStart, -(weeks-1)*7);
-      const endDate = addDays(currentStart, 6);
+      const currentEnd = addDays(currentStart, 6);
+      const requestedThrough = String(u.searchParams.get('through') || '');
+      let endDate = currentEnd;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(requestedThrough)) {
+        const parsed = new Date(requestedThrough+'T12:00:00Z');
+        if (Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10)===requestedThrough && requestedThrough>currentEnd) {
+          const capped = requestedThrough>addDays(currentEnd,112)?addDays(currentEnd,112):requestedThrough;
+          const day = new Date(capped+'T12:00:00Z').getUTCDay();
+          endDate=addDays(capped,6-day);
+        }
+      }
 
       const q = await pool.query(`
         SELECT service_date::text,
@@ -898,8 +908,7 @@ async function handler(req, res) {
       `, [firstStart,endDate]);
 
       const byWeek = new Map();
-      for(let i=0;i<weeks;i++){
-        const ws=addDays(firstStart,i*7);
+      for(let ws=firstStart;ws<=endDate;ws=addDays(ws,7)){
         byWeek.set(ws,{week_start:ws,bookings:0,classes:[]});
       }
       for(const row of q.rows){
