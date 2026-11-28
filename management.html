@@ -62,7 +62,7 @@
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0"><button type="button" class="button" id="calculateLast30Bookings">TOTAL SHOWN WEEKS</button><strong id="last30BookingsResult" aria-live="polite">Select to add all weeks in the graph.</strong></div>
         <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
         <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
-      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Monthly turnover</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Recorded paid booking income by class date; excludes package sales and unverified refunds.</p></section>
+      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Monthly booked sales</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Booklink monthly booked value and booking count, verified from reports on 28 November 2026. Snapshot figures, not live collections or confirmed cash turnover. Future months await verified reports.</p></section>
 <section class="panel" id="businessPerformance" aria-label="Business performance">
 <style>
 #businessPerformance .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
@@ -277,18 +277,14 @@ const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
 const count=w=>Number(w.bookings||0);
 const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
 function renderLeadMonths(){
- const months=new Map();
- for(const w of rows){
-   for(let i=0;i<7;i++){const k=addDays(w.week_start,i).slice(0,7);if(k>="2026-10"&&k<="2027-01"&&!months.has(k))months.set(k,{bookings:0,income:0});}
-   for(const c of w.classes||[]){const k=c.date.slice(0,7);if(months.has(k))months.get(k).bookings+=Number(c.booked||0);}
-   for(const d of w.income_days||[]){const k=d.date.slice(0,7);if(months.has(k))months.get(k).income+=Number(d.income||0);}
- }
- const keys=[...months.keys()].sort(), known=rows.length>0&&rows.every(w=>w.income!=null), max=Math.max(1,...[...months.values()].map(m=>m.income));
+ const verified={"2026-10":{bookings:634,value:50820},"2026-11":{bookings:652,value:50330}};
+ const keys=["2026-10","2026-11","2026-12","2027-01"];
+ const max=Math.max(1,...Object.values(verified).map(m=>m.value));
  const chart=el("monthlyLeadChart");
  chart.style.cssText="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;overflow:visible";
  chart.innerHTML=keys.map(k=>{
-   const m=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});
-   return '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0"><strong style="font-size:clamp(11px,2vw,18px);white-space:nowrap">'+(known?rand(m.income):"R —")+'</strong><div class="week-bar-track" style="height:180px;width:70%;max-width:100px;position:relative"><div class="week-bar-fill" style="height:'+(known?Math.round(m.income/max*100):0)+'%;opacity:'+(k>today().slice(0,7)?0.55:1)+'"></div></div><strong>'+label+'</strong><span style="font-size:11px;text-align:center">'+fmt(m.bookings)+' bookings</span></div>';
+   const m=verified[k],label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});
+   return '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0"><strong style="font-size:clamp(11px,2vw,18px);white-space:nowrap">'+(m?rand(m.value):"R —")+'</strong><div class="week-bar-track" style="height:180px;width:70%;max-width:100px;position:relative"><div class="week-bar-fill" style="height:'+(m?Math.round(m.value/max*100):0)+'%"></div></div><strong>'+label+'</strong><span style="font-size:11px;text-align:center">'+(m?fmt(m.bookings)+' bookings':"Awaiting report")+'</span></div>';
  }).join("");
 }
 function renderMonthly(){
