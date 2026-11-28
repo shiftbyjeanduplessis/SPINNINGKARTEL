@@ -76,8 +76,8 @@ function renderWeeklyBookings(){
     const height=bookings>0?Math.max(3,Math.round(bookings/max*100)):0;
     const active=w.week_start===currentBookingWeek()?" current":w.week_start>currentBookingWeek()?" future":"";
     return '<div class="week-bar-item'+active+'" title="'+bookings+' bookings">'+
-      '<div class="week-bar-value">'+bookings+'</div>'+
-      '<div class="week-bar-track" style="position:relative"><div class="week-bar-fill" style="height:'+height+'%"></div><span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#111;background:#ffffffdd">'+(w.income==null?"R —":"R"+Number(w.income).toLocaleString("en-ZA"))+'</span></div>'+
+      '<div class="week-bar-value">'+bookings+'<span style="display:block;font-size:11px;font-weight:700;white-space:nowrap">'+(w.income==null?"R —":"R"+Number(w.income).toLocaleString("en-ZA",{maximumFractionDigits:2}))+'</span></div>'+
+      '<div class="week-bar-track"><div class="week-bar-fill" style="height:'+height+'%"></div></div>'+
       '<strong>'+shortWeekLabel(w.week_start)+'</strong>'+
       '<span>'+(active===" current"?"NOW":active===" future"?"AHEAD":"WEEK")+'</span>'+
     '</div>';
