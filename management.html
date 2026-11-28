@@ -62,7 +62,7 @@
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0"><button type="button" class="button" id="calculateLast30Bookings">TOTAL SHOWN WEEKS</button><strong id="last30BookingsResult" aria-live="polite">Select to add all weeks in the graph.</strong></div>
         <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
         <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
-      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Bookings &amp; income by month</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Recorded paid booking income by class date; excludes package sales and unverified refunds.</p></section>
+      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Monthly turnover</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Recorded paid booking income by class date; excludes package sales and unverified refunds.</p></section>
 <section class="panel" id="businessPerformance" aria-label="Business performance">
 <style>
 #businessPerformance .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
@@ -277,11 +277,19 @@ const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
 const count=w=>Number(w.bookings||0);
 const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
 function renderLeadMonths(){
- const months=new Map(), income=new Map(); for(const w of rows)for(const d of w.income_days||[]){const k=d.date.slice(0,7);income.set(k,(income.get(k)||0)+Number(d.income));}
- for(const w of rows)for(const c of w.classes||[]){const key=c.date.slice(0,7);months.set(key,(months.get(key)||0)+Number(c.booked||0));}
- const keys=[...months.keys()].sort(), max=Math.max(1,...months.values());
- const chart=el("monthlyLeadChart");chart.style.setProperty("--week-columns",String(Math.max(1,Math.min(4,keys.length))));
- chart.innerHTML=keys.map(k=>{const n=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});return '<div class="week-bar-item"><div class="week-bar-value">'+fmt(n)+'</div><div class="week-bar-track" style="position:relative"><div class="week-bar-fill" style="height:'+Math.round(n/max*100)+'%"></div><span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#111;background:#ffffffdd">'+(rows.some(w=>w.income!=null)?rand(income.get(k)||0):"R —")+'</span></div><strong>'+label+'</strong><span>'+(k>today().slice(0,7)?"AHEAD":"MONTH")+'</span></div>';}).join("");
+ const months=new Map();
+ for(const w of rows){
+   for(let i=0;i<7;i++){const k=addDays(w.week_start,i).slice(0,7);if(k>="2026-10"&&k<="2027-01"&&!months.has(k))months.set(k,{bookings:0,income:0});}
+   for(const c of w.classes||[]){const k=c.date.slice(0,7);if(months.has(k))months.get(k).bookings+=Number(c.booked||0);}
+   for(const d of w.income_days||[]){const k=d.date.slice(0,7);if(months.has(k))months.get(k).income+=Number(d.income||0);}
+ }
+ const keys=[...months.keys()].sort(), known=rows.length>0&&rows.every(w=>w.income!=null), max=Math.max(1,...[...months.values()].map(m=>m.income));
+ const chart=el("monthlyLeadChart");
+ chart.style.cssText="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;overflow:visible";
+ chart.innerHTML=keys.map(k=>{
+   const m=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});
+   return '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0"><strong style="font-size:clamp(11px,2vw,18px);white-space:nowrap">'+(known?rand(m.income):"R —")+'</strong><div class="week-bar-track" style="height:180px;width:70%;max-width:100px;position:relative"><div class="week-bar-fill" style="height:'+(known?Math.round(m.income/max*100):0)+'%;opacity:'+(k>today().slice(0,7)?0.55:1)+'"></div></div><strong>'+label+'</strong><span style="font-size:11px;text-align:center">'+fmt(m.bookings)+' bookings</span></div>';
+ }).join("");
 }
 function renderMonthly(){
  renderLeadMonths();
