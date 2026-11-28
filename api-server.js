@@ -927,7 +927,6 @@ async function handler(req, res) {
         w.bookings+=item.booked;
         w.classes.push(item);
       }
-      // Latest booking snapshot per ID; retained cancelled payments included.
       const financial=await pool.query(`
         WITH latest AS (
           SELECT DISTINCT ON (payload->'data'->>'id') payload->'data' AS d
@@ -939,7 +938,18 @@ async function handler(req, res) {
         SELECT substring(d->>'start_time',1,10) AS service_date,
           SUM((d->>'amount_paid_cents')::numeric)/100 AS income
         FROM latest WHERE d->>'payment_status'='paid'
-          AND d->>'amount_paid_cents' ~ '^[0-9]+
+          AND d->>'amount_paid_cents' ~ '^[0-9]+$'
+          AND substring(d->>'start_time',1,10) BETWEEN $1 AND $2
+        GROUP BY 1 ORDER BY 1
+      `,[firstStart,endDate]);
+      for(const w of byWeek.values()){w.income=0;w.income_days=[];}
+      for(const row of financial.rows){
+        const date=row.service_date,d=new Date(date+'T12:00:00Z');
+        if(!Number.isFinite(d.getTime()))continue;
+        const ws=addDays(date,-d.getUTCDay()),w=byWeek.get(ws);
+        if(w){w.income+=Number(row.income);w.income_days.push({date,income:Number(row.income)});}
+      }
+      return json(res,200,{weeks:[...byWeek.values()],income_basis:'recorded paid booking amounts by class date; excludes package sales and unverified refunds'},origin);
     }
 
     if (req.method === 'GET' && path === '/api/admin/classes') {
