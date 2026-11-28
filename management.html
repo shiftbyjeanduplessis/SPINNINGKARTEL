@@ -54,7 +54,16 @@
         <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. Confirmed bookings, cancellations and reschedules feed the live class counts shown here and on the public site.</p></div>
         <a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK</a>
       </div>
-      <section class="panel" id="businessPerformance" aria-label="Business performance">
+      <section class="panel weekly-bookings-panel">
+        <div class="panel-head">
+          <div><p class="eyebrow">GROWTH</p><h2>Bookings by week</h2></div>
+          <p id="weeklyBookingLabel">Sunday–Saturday booking weeks · through January</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0"><button type="button" class="button" id="calculateLast30Bookings">TOTAL SHOWN WEEKS</button><strong id="last30BookingsResult" aria-live="polite">Select to add all weeks in the graph.</strong></div>
+        <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
+        <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
+      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Bookings &amp; income by month</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Income is not available from the current booking-count feed.</p></section>
+<section class="panel" id="businessPerformance" aria-label="Business performance">
 <style>
 #businessPerformance .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
 #businessPerformance .bp-grid article{border:1px solid #8884;border-radius:12px;padding:14px;display:grid;gap:6px}
@@ -73,7 +82,7 @@
 <div class="panel-head"><div><p class="eyebrow">BUSINESS PERFORMANCE</p><h2>Weekly overview</h2></div><p id="bpStatus" role="status">Loading Booklink booking history…</p></div>
 <div class="bp-controls"><label>Reporting month <input type="month" id="bpMonth"></label></div><div id="bpMonthly" style="margin:16px 0"></div><div class="bp-controls"><label>Period <select id="bpPeriod"><option value="current">This week</option><option value="last">Last week</option><option value="month">This month</option><option value="all">Since opening</option></select></label><button type="button" class="mini" id="bpRefresh">Refresh</button><button type="button" class="mini" id="bpExport" disabled>Export CSV</button></div>
 <div id="bpCards" class="bp-grid"></div><p class="bp-note">Actual turnover requires verified payment transactions. Booking counts exclude cancelled bookings; they cannot establish paid revenue, retained cancellation fees or package sales. No revenue estimate is presented as actual turnover.</p>
-<h3>Weekly booking growth</h3><div id="bpBars"></div>
+<div id="bpBars" hidden></div>
 <h3>Weekly history</h3><p class="bp-note">Week ending · booked seats · actual turnover · growth. Expand a week for daily counts. Future bookings are excluded from historical totals.</p><div id="bpHistory"></div>
 <h3>Class demand by time</h3><p class="bp-note">Last four completed weeks · booked seats per recorded class; dash means no recorded class.</p><div id="bpHeat" class="bp-heat"></div>
 </section>
@@ -84,15 +93,7 @@
         <article><span>Membership actions</span><strong id="metricMembershipActions">0</strong></article>
       </div>
 
-      <section class="panel weekly-bookings-panel">
-        <div class="panel-head">
-          <div><p class="eyebrow">GROWTH</p><h2>Bookings by week</h2></div>
-          <p id="weeklyBookingLabel">Sunday–Saturday booking weeks · through January</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0"><button type="button" class="button" id="calculateLast30Bookings">TOTAL SHOWN WEEKS</button><strong id="last30BookingsResult" aria-live="polite">Select to add all weeks in the graph.</strong></div>
-        <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
-        <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
-      </section>
+      
 
       <section class="panel owner-insights-panel">
         <div class="panel-head">
@@ -266,7 +267,7 @@
 
 <div id="toast" class="toast"></div>
 <script src="config.js?v=20261029-16bikes"></script>
-<script src="management.js?v=20261126-week-grid"></script>
+<script src="management.js?v=20261128-lead-graph"></script>
 <script>
 (function(){
 const el=id=>document.getElementById(id), opening="2026-10-04";
@@ -275,7 +276,15 @@ const fmt=n=>Number(n).toLocaleString("en-ZA"), rand=n=>"R"+fmt(n);
 const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
 const count=w=>Number(w.bookings||0);
 const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
+function renderLeadMonths(){
+ const months=new Map();
+ for(const w of rows)for(const c of w.classes||[]){const key=c.date.slice(0,7);months.set(key,(months.get(key)||0)+Number(c.booked||0));}
+ const keys=[...months.keys()].sort(), max=Math.max(1,...months.values());
+ const chart=el("monthlyLeadChart");chart.style.setProperty("--week-columns",String(Math.max(1,Math.min(4,keys.length))));
+ chart.innerHTML=keys.map(k=>{const n=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});return '<div class="week-bar-item"><div class="week-bar-value">'+fmt(n)+'</div><div class="week-bar-track" style="position:relative"><div class="week-bar-fill" style="height:'+Math.round(n/max*100)+'%"></div><span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#111;background:#ffffffdd">R —</span></div><strong>'+label+'</strong><span>'+(k>today().slice(0,7)?"AHEAD":"MONTH")+'</span></div>';}).join("");
+}
 function renderMonthly(){
+ renderLeadMonths();
  const month=el("bpMonth").value, first=month+"-01", d=new Date(first+"T12:00:00Z");d.setUTCMonth(d.getUTCMonth()+1);const last=addDays(d.toISOString().slice(0,10),-1);
  const start=addDays(first,-new Date(first+"T12:00:00Z").getUTCDay());
  let total=0, html='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #8884"><strong>Week</strong><strong>Bookings</strong><strong>Income</strong></div>';
