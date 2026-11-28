@@ -62,7 +62,7 @@
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0"><button type="button" class="button" id="calculateLast30Bookings">TOTAL SHOWN WEEKS</button><strong id="last30BookingsResult" aria-live="polite">Select to add all weeks in the graph.</strong></div>
         <div id="weeklyBookingSummary" class="weekly-booking-summary"></div>
         <div id="weeklyBookingChart" class="weekly-booking-chart week-totals-chart" aria-label="Bookings by week bar graph"></div>
-      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Bookings &amp; income by month</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Income is not available from the current booking-count feed.</p></section>
+      <div class="panel-head" style="margin-top:24px"><div><p class="eyebrow">MONTHLY TOTALS</p><h2>Bookings &amp; income by month</h2></div></div><div id="monthlyLeadChart" class="weekly-booking-chart week-totals-chart"></div><p class="muted" style="font-size:12px">Recorded paid booking income by class date; excludes package sales and unverified refunds.</p></section>
 <section class="panel" id="businessPerformance" aria-label="Business performance">
 <style>
 #businessPerformance .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
@@ -81,7 +81,7 @@
 </style>
 <div class="panel-head"><div><p class="eyebrow">BUSINESS PERFORMANCE</p><h2>Weekly overview</h2></div><p id="bpStatus" role="status">Loading Booklink booking history…</p></div>
 <div class="bp-controls"><label>Reporting month <input type="month" id="bpMonth"></label></div><div id="bpMonthly" style="margin:16px 0"></div><div class="bp-controls"><label>Period <select id="bpPeriod"><option value="current">This week</option><option value="last">Last week</option><option value="month">This month</option><option value="all">Since opening</option></select></label><button type="button" class="mini" id="bpRefresh">Refresh</button><button type="button" class="mini" id="bpExport" disabled>Export CSV</button></div>
-<div id="bpCards" class="bp-grid"></div><p class="bp-note">Actual turnover requires verified payment transactions. Booking counts exclude cancelled bookings; they cannot establish paid revenue, retained cancellation fees or package sales. No revenue estimate is presented as actual turnover.</p>
+<div id="bpCards" class="bp-grid"></div><p class="bp-note">Income shown is recorded booking payments by class date, including retained cancelled payments. Package sales and unverified refunds are excluded.</p>
 <div id="bpBars" hidden></div>
 <h3>Weekly history</h3><p class="bp-note">Week ending · booked seats · actual turnover · growth. Expand a week for daily counts. Future bookings are excluded from historical totals.</p><div id="bpHistory"></div>
 <h3>Class demand by time</h3><p class="bp-note">Last four completed weeks · booked seats per recorded class; dash means no recorded class.</p><div id="bpHeat" class="bp-heat"></div>
@@ -267,7 +267,7 @@
 
 <div id="toast" class="toast"></div>
 <script src="config.js?v=20261029-16bikes"></script>
-<script src="management.js?v=20261128-lead-graph"></script>
+<script src="management.js?v=20261128-income"></script>
 <script>
 (function(){
 const el=id=>document.getElementById(id), opening="2026-10-04";
@@ -277,24 +277,24 @@ const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
 const count=w=>Number(w.bookings||0);
 const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
 function renderLeadMonths(){
- const months=new Map();
+ const months=new Map(), income=new Map(); for(const w of rows)for(const d of w.income_days||[]){const k=d.date.slice(0,7);income.set(k,(income.get(k)||0)+Number(d.income));}
  for(const w of rows)for(const c of w.classes||[]){const key=c.date.slice(0,7);months.set(key,(months.get(key)||0)+Number(c.booked||0));}
  const keys=[...months.keys()].sort(), max=Math.max(1,...months.values());
  const chart=el("monthlyLeadChart");chart.style.setProperty("--week-columns",String(Math.max(1,Math.min(4,keys.length))));
- chart.innerHTML=keys.map(k=>{const n=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});return '<div class="week-bar-item"><div class="week-bar-value">'+fmt(n)+'</div><div class="week-bar-track" style="position:relative"><div class="week-bar-fill" style="height:'+Math.round(n/max*100)+'%"></div><span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#111;background:#ffffffdd">R —</span></div><strong>'+label+'</strong><span>'+(k>today().slice(0,7)?"AHEAD":"MONTH")+'</span></div>';}).join("");
+ chart.innerHTML=keys.map(k=>{const n=months.get(k),label=new Date(k+"-01T12:00:00Z").toLocaleDateString("en-ZA",{month:"short",year:"2-digit",timeZone:"UTC"});return '<div class="week-bar-item"><div class="week-bar-value">'+fmt(n)+'</div><div class="week-bar-track" style="position:relative"><div class="week-bar-fill" style="height:'+Math.round(n/max*100)+'%"></div><span style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#111;background:#ffffffdd">'+(rows.some(w=>w.income!=null)?rand(income.get(k)||0):"R —")+'</span></div><strong>'+label+'</strong><span>'+(k>today().slice(0,7)?"AHEAD":"MONTH")+'</span></div>';}).join("");
 }
 function renderMonthly(){
  renderLeadMonths();
  const month=el("bpMonth").value, first=month+"-01", d=new Date(first+"T12:00:00Z");d.setUTCMonth(d.getUTCMonth()+1);const last=addDays(d.toISOString().slice(0,10),-1);
  const start=addDays(first,-new Date(first+"T12:00:00Z").getUTCDay());
- let total=0, html='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #8884"><strong>Week</strong><strong>Bookings</strong><strong>Income</strong></div>';
+ let total=0, totalIncome=0, html='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #8884"><strong>Week</strong><strong>Bookings</strong><strong>Income</strong></div>';
  for(let ws=start;ws<=last;ws=addDays(ws,7)){
  const from=ws<first?first:ws,end=addDays(ws,6),to=end>last?last:end,w=rows.find(x=>x.week_start===ws);
  const n=w?sum((w.classes||[]).filter(c=>c.date>=from&&c.date<=to),c=>Number(c.booked||0)):null;
- if(n!==null)total+=n;
- html+='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid #8884"><strong>'+shortWeekLabel(from)+' – '+shortWeekLabel(to)+'</strong><span>'+(n===null?'—':fmt(n))+'</span><span>Unavailable</span></div>';
+ if(n!==null)total+=n; const inc=w?.income==null?null:sum((w.income_days||[]).filter(c=>c.date>=from&&c.date<=to),c=>Number(c.income));if(inc!==null)totalIncome+=inc;
+ html+='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid #8884"><strong>'+shortWeekLabel(from)+' – '+shortWeekLabel(to)+'</strong><span>'+(n===null?'—':fmt(n))+'</span><span>'+(inc===null?"—":rand(inc))+'</span></div>';
  }
- el("bpMonthly").innerHTML='<h3>Monthly bookings &amp; income</h3>'+html+'<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:14px 0"><strong>Month total</strong><strong>'+fmt(total)+'</strong><strong>Unavailable</strong></div><p class="bp-note">Sunday–Saturday weeks clipped to the selected month. Includes advance bookings where available. Income requires verified payment data.</p>';
+ el("bpMonthly").innerHTML='<h3>Monthly bookings &amp; income</h3>'+html+'<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:14px 0"><strong>Month total</strong><strong>'+fmt(total)+'</strong><strong>'+(rows.some(w=>w.income!=null)?rand(totalIncome):"—")+'</strong></div><p class="bp-note">Sunday–Saturday weeks clipped to the selected month. Includes advance bookings where available. Recorded paid booking amounts by class date; package sales excluded.</p>';
 }
 function render(){
  renderMonthly();
@@ -305,21 +305,21 @@ function render(){
  const booked=sum(classes,c=>Number(c.booked||0));
  const pay=payroll.filter(p=>period==="all"||period==="month"?period==="all"||p.week_start.slice(0,7)===now.slice(0,7):selected.some(w=>addDays(w.week_start,1)===p.week_start));
  const cost=sum(pay,p=>Number(p.total||0));
- const cards=[["Actual turnover","Unavailable","Payment feed not verified"],["Booked seats",fmt(booked),"Scheduled demand, not paid bookings"],["Instructor costs",period==="month"?"See payroll":pay.length?rand(cost):"—","Closed attendance only"],["After instructor costs","Unavailable","Requires actual turnover"],["Bookings since opening",fmt(sum(past,count)),"Excludes future weeks"],["Week-on-week growth",growth(count(past.find(w=>w.week_start===current)||{}),count(past.find(w=>w.week_start===addDays(current,-7))||{})),"Current week vs previous full week"]];
+ const cards=[["Recorded booking income",rows.some(w=>w.income!=null)?rand(sum(selected.flatMap(w=>w.income_days||[]).filter(c=>period!=="month"||c.date.slice(0,7)===now.slice(0,7)),c=>Number(c.income))):"—","By class date; excludes package sales"],["Booked seats",fmt(booked),"Scheduled demand, not paid bookings"],["Instructor costs",period==="month"?"See payroll":pay.length?rand(cost):"—","Closed attendance only"],["After instructor costs","Unavailable","Requires actual turnover"],["Bookings since opening",fmt(sum(past,count)),"Excludes future weeks"],["Week-on-week growth",growth(count(past.find(w=>w.week_start===current)||{}),count(past.find(w=>w.week_start===addDays(current,-7))||{})),"Current week vs previous full week"]];
  el("bpCards").innerHTML=cards.map(c=>"<article><small>"+c[0]+"</small><strong>"+c[1]+"</strong><small>"+c[2]+"</small></article>").join("");
  const max=Math.max(1,...past.map(count));
  el("bpBars").innerHTML=past.slice(-12).map(w=>'<div class="bp-row"><span>'+shortWeekLabel(addDays(w.week_start,6))+'</span><div class="bp-track"><div class="bp-fill" style="width:'+Math.min(100,count(w)/max*100)+'%"></div></div><strong>'+fmt(count(w))+'</strong></div>').join("");
- el("bpHistory").innerHTML=past.map((w,i)=>({w,i})).reverse().map(({w,i})=>'<details><summary><strong>'+shortWeekLabel(addDays(w.week_start,6))+'</strong><span>'+fmt(count(w))+'</span><span>Unavailable</span><span>'+growth(count(w),i?count(past[i-1]):0)+'</span></summary><p>'+Array.from({length:7},(_,j)=>{const d=addDays(w.week_start,j);return shortWeekLabel(d)+': '+fmt(sum((w.classes||[]).filter(c=>c.date===d),c=>Number(c.booked||0)));}).join(' · ')+'</p></details>').join("");
+ el("bpHistory").innerHTML=past.map((w,i)=>({w,i})).reverse().map(({w,i})=>'<details><summary><strong>'+shortWeekLabel(addDays(w.week_start,6))+'</strong><span>'+fmt(count(w))+'</span><span>'+(w.income==null?"—":rand(w.income))+'</span><span>'+growth(count(w),i?count(past[i-1]):0)+'</span></summary><p>'+Array.from({length:7},(_,j)=>{const d=addDays(w.week_start,j);return shortWeekLabel(d)+': '+fmt(sum((w.classes||[]).filter(c=>c.date===d),c=>Number(c.booked||0)));}).join(' · ')+'</p></details>').join("");
  const recent=past.filter(w=>w.week_start<current).slice(-4).flatMap(w=>w.classes||[]);
  const times=[...new Set(recent.map(c=>c.time))].sort();
  el("bpHeat").innerHTML=["Time","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>'<span>'+d+'</span>').join("")+times.map(t=>'<span>'+esc(t)+'</span>'+Array.from({length:6},(_,j)=>{const matches=recent.filter(c=>c.time===t&&new Date(c.date+"T12:00:00Z").getUTCDay()===j+1);const n=matches.length?sum(matches,c=>Number(c.booked||0))/matches.length:null;return '<span style="background:'+(n===null?'transparent':'rgba(57,135,213,'+Math.min(.65,.12+n/25)+')')+'">'+(n===null?'—':n.toFixed(1))+'</span>';}).join("")).join("");
  }
  async function load(){
  el("bpStatus").textContent="Refreshing…";el("bpExport").disabled=true;
- try{const b=await api("/api/admin/booking-weeks?weeks=16&through=2027-01-30");rows=(b.weeks||[]).filter(w=>w.week_start>=opening);try{payroll=(await api("/api/admin/pay-history?weeks=16")).weeks||[];}catch(e){payroll=[];}loaded=true;render();el("bpStatus").textContent="Bookings refreshed "+new Date().toLocaleTimeString("en-ZA")+" · payment data unavailable";el("bpExport").disabled=false;}catch(e){el("bpStatus").textContent="Unable to refresh booking data. "+(loaded?"Showing last loaded figures.":"Please retry.");}
+ try{const b=await api("/api/admin/booking-weeks?weeks=16&through=2027-01-30");rows=(b.weeks||[]).filter(w=>w.week_start>=opening);try{payroll=(await api("/api/admin/pay-history?weeks=16")).weeks||[];}catch(e){payroll=[];}loaded=true;render();el("bpStatus").textContent="Bookings refreshed "+new Date().toLocaleTimeString("en-ZA")+" · recorded booking payments";el("bpExport").disabled=false;}catch(e){el("bpStatus").textContent="Unable to refresh booking data. "+(loaded?"Showing last loaded figures.":"Please retry.");}
  }
  el("bpMonth").value=today().slice(0,7);el("bpMonth").onchange=()=>{if(loaded)renderMonthly();};el("bpPeriod").onchange=()=>{if(loaded)render();};el("bpRefresh").onclick=load;
- el("bpExport").onclick=()=>{const lines=["week_start,week_end,booked_seats,actual_turnover_zar",...rows.filter(w=>w.week_start<=currentBookingWeek()).map(w=>[w.week_start,addDays(w.week_start,6),count(w),""].join(","))];const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));const a=document.createElement("a");a.href=url;a.download="spinning-kartel-weekly.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+ el("bpExport").onclick=()=>{const lines=["week_start,week_end,booked_seats,recorded_booking_income_zar",...rows.filter(w=>w.week_start<=currentBookingWeek()).map(w=>[w.week_start,addDays(w.week_start,6),count(w),w.income??""].join(","))];const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));const a=document.createElement("a");a.href=url;a.download="spinning-kartel-weekly.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
  if(TOKEN)load();
 })();
 </script>
