@@ -54,6 +54,29 @@
         <div><p class="eyebrow">STUDIO CONTROL</p><h1>Today</h1><p class="muted">Booklink owns bookings. Confirmed bookings, cancellations and reschedules feed the live class counts shown here and on the public site.</p></div>
         <a class="button" href="https://app.booklink.co.za" target="_blank" rel="noreferrer">OPEN BOOKLINK</a>
       </div>
+      <section class="panel" id="businessPerformance" aria-label="Business performance">
+<style>
+#businessPerformance .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:16px 0}
+#businessPerformance .bp-grid article{border:1px solid #8884;border-radius:12px;padding:14px;display:grid;gap:6px}
+#businessPerformance .bp-grid strong{font-size:clamp(20px,3vw,30px);font-variant-numeric:tabular-nums}
+#businessPerformance .bp-grid small,#businessPerformance .bp-note{opacity:.75;font-size:12px}
+#businessPerformance .bp-row{display:grid;grid-template-columns: minmax(76px,1fr) 2fr 48px;gap:10px;align-items:center;margin:8px 0}
+#businessPerformance .bp-track{height:12px;background:#8883;border-radius:4px;overflow:hidden}
+#businessPerformance .bp-fill{height:100%;background:#3987d5}
+#businessPerformance details{border-bottom:1px solid #8884;padding:12px 0}
+#businessPerformance summary{cursor:pointer;display:grid;grid-template-columns:1.3fr .7fr 1fr .8fr;gap:8px;align-items:center;font-size:13px}
+#businessPerformance .bp-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#businessPerformance select{max-width:100%;padding:8px}
+#businessPerformance .bp-heat{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;font-size:11px;text-align:center;align-items:center}
+#businessPerformance .bp-heat span{padding:7px 1px;border-radius:4px}
+</style>
+<div class="panel-head"><div><p class="eyebrow">BUSINESS PERFORMANCE</p><h2>Weekly overview</h2></div><p id="bpStatus" role="status">Loading Booklink booking history…</p></div>
+<div class="bp-controls"><label>Period <select id="bpPeriod"><option value="current">This week</option><option value="last">Last week</option><option value="month">This month</option><option value="all">Since opening</option></select></label><button type="button" class="mini" id="bpRefresh">Refresh</button><button type="button" class="mini" id="bpExport" disabled>Export CSV</button></div>
+<div id="bpCards" class="bp-grid"></div><p class="bp-note">Actual turnover requires verified payment transactions. Booking counts exclude cancelled bookings; they cannot establish paid revenue, retained cancellation fees or package sales. No revenue estimate is presented as actual turnover.</p>
+<h3>Weekly booking growth</h3><div id="bpBars"></div>
+<h3>Weekly history</h3><p class="bp-note">Week ending · booked seats · actual turnover · growth. Expand a week for daily counts. Future bookings are excluded from historical totals.</p><div id="bpHistory"></div>
+<h3>Class demand by time</h3><p class="bp-note">Last four completed weeks · booked seats per recorded class; dash means no recorded class.</p><div id="bpHeat" class="bp-heat"></div>
+</section>
       <div class="metrics">
         <article><span>Classes today</span><strong id="metricClasses">0</strong></article>
         <article><span>Booked seats</span><strong id="metricBookings">0</strong></article>
@@ -244,5 +267,39 @@
 <div id="toast" class="toast"></div>
 <script src="config.js?v=20261029-16bikes"></script>
 <script src="management.js?v=20261126-week-grid"></script>
+<script>
+(function(){
+const el=id=>document.getElementById(id), opening="2026-10-04";
+let rows=[], payroll=[], loaded=false;
+const fmt=n=>Number(n).toLocaleString("en-ZA"), rand=n=>"R"+fmt(n);
+const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
+const count=w=>Number(w.bookings||0);
+const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
+function render(){
+ const current=currentBookingWeek(), period=el("bpPeriod").value, now=today();
+ const past=rows.filter(w=>w.week_start<=current);
+ const selected=period==="all"?past:period==="month"?past:past.filter(w=>w.week_start===(period==="last"?addDays(current,-7):current));
+ const classes=selected.flatMap(w=>w.classes||[]).filter(c=>period!=="month"||c.date.slice(0,7)===now.slice(0,7));
+ const booked=sum(classes,c=>Number(c.booked||0));
+ const pay=payroll.filter(p=>period==="all"||period==="month"?period==="all"||p.week_start.slice(0,7)===now.slice(0,7):selected.some(w=>addDays(w.week_start,1)===p.week_start));
+ const cost=sum(pay,p=>Number(p.total||0));
+ const cards=[["Actual turnover","Unavailable","Payment feed not verified"],["Booked seats",fmt(booked),"Scheduled demand, not paid bookings"],["Instructor costs",period==="month"?"See payroll":pay.length?rand(cost):"—","Closed attendance only"],["After instructor costs","Unavailable","Requires actual turnover"],["Bookings since opening",fmt(sum(past,count)),"Excludes future weeks"],["Week-on-week growth",growth(count(past.find(w=>w.week_start===current)||{}),count(past.find(w=>w.week_start===addDays(current,-7))||{})),"Current week vs previous full week"]];
+ el("bpCards").innerHTML=cards.map(c=>"<article><small>"+c[0]+"</small><strong>"+c[1]+"</strong><small>"+c[2]+"</small></article>").join("");
+ const max=Math.max(1,...past.map(count));
+ el("bpBars").innerHTML=past.slice(-12).map(w=>'<div class="bp-row"><span>'+shortWeekLabel(addDays(w.week_start,6))+'</span><div class="bp-track"><div class="bp-fill" style="width:'+Math.min(100,count(w)/max*100)+'%"></div></div><strong>'+fmt(count(w))+'</strong></div>').join("");
+ el("bpHistory").innerHTML=past.map((w,i)=>({w,i})).reverse().map(({w,i})=>'<details><summary><strong>'+shortWeekLabel(addDays(w.week_start,6))+'</strong><span>'+fmt(count(w))+'</span><span>Unavailable</span><span>'+growth(count(w),i?count(past[i-1]):0)+'</span></summary><p>'+Array.from({length:7},(_,j)=>{const d=addDays(w.week_start,j);return shortWeekLabel(d)+': '+fmt(sum((w.classes||[]).filter(c=>c.date===d),c=>Number(c.booked||0)));}).join(' · ')+'</p></details>').join("");
+ const recent=past.filter(w=>w.week_start<current).slice(-4).flatMap(w=>w.classes||[]);
+ const times=[...new Set(recent.map(c=>c.time))].sort();
+ el("bpHeat").innerHTML=["Time","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>'<span>'+d+'</span>').join("")+times.map(t=>'<span>'+esc(t)+'</span>'+Array.from({length:6},(_,j)=>{const matches=recent.filter(c=>c.time===t&&new Date(c.date+"T12:00:00Z").getUTCDay()===j+1);const n=matches.length?sum(matches,c=>Number(c.booked||0))/matches.length:null;return '<span style="background:'+(n===null?'transparent':'rgba(57,135,213,'+Math.min(.65,.12+n/25)+')')+'">'+(n===null?'—':n.toFixed(1))+'</span>';}).join("")).join("");
+ }
+ async function load(){
+ el("bpStatus").textContent="Refreshing…";el("bpExport").disabled=true;
+ try{const b=await api("/api/admin/booking-weeks?weeks=16");rows=(b.weeks||[]).filter(w=>w.week_start>=opening);try{payroll=(await api("/api/admin/pay-history?weeks=16")).weeks||[];}catch(e){payroll=[];}loaded=true;render();el("bpStatus").textContent="Bookings refreshed "+new Date().toLocaleTimeString("en-ZA")+" · payment data unavailable";el("bpExport").disabled=false;}catch(e){el("bpStatus").textContent="Unable to refresh booking data. "+(loaded?"Showing last loaded figures.":"Please retry.");}
+ }
+ el("bpPeriod").onchange=()=>{if(loaded)render();};el("bpRefresh").onclick=load;
+ el("bpExport").onclick=()=>{const lines=["week_start,week_end,booked_seats,actual_turnover_zar",...rows.filter(w=>w.week_start<=currentBookingWeek()).map(w=>[w.week_start,addDays(w.week_start,6),count(w),""].join(","))];const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));const a=document.createElement("a");a.href=url;a.download="spinning-kartel-weekly.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+ if(TOKEN)load();
+})();
+</script>
 </body>
 </html>
