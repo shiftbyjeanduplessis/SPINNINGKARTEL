@@ -71,7 +71,7 @@
 #businessPerformance .bp-heat span{padding:7px 1px;border-radius:4px}
 </style>
 <div class="panel-head"><div><p class="eyebrow">BUSINESS PERFORMANCE</p><h2>Weekly overview</h2></div><p id="bpStatus" role="status">Loading Booklink booking history…</p></div>
-<div class="bp-controls"><label>Period <select id="bpPeriod"><option value="current">This week</option><option value="last">Last week</option><option value="month">This month</option><option value="all">Since opening</option></select></label><button type="button" class="mini" id="bpRefresh">Refresh</button><button type="button" class="mini" id="bpExport" disabled>Export CSV</button></div>
+<div class="bp-controls"><label>Reporting month <input type="month" id="bpMonth"></label></div><div id="bpMonthly" style="margin:16px 0"></div><div class="bp-controls"><label>Period <select id="bpPeriod"><option value="current">This week</option><option value="last">Last week</option><option value="month">This month</option><option value="all">Since opening</option></select></label><button type="button" class="mini" id="bpRefresh">Refresh</button><button type="button" class="mini" id="bpExport" disabled>Export CSV</button></div>
 <div id="bpCards" class="bp-grid"></div><p class="bp-note">Actual turnover requires verified payment transactions. Booking counts exclude cancelled bookings; they cannot establish paid revenue, retained cancellation fees or package sales. No revenue estimate is presented as actual turnover.</p>
 <h3>Weekly booking growth</h3><div id="bpBars"></div>
 <h3>Weekly history</h3><p class="bp-note">Week ending · booked seats · actual turnover · growth. Expand a week for daily counts. Future bookings are excluded from historical totals.</p><div id="bpHistory"></div>
@@ -275,7 +275,20 @@ const fmt=n=>Number(n).toLocaleString("en-ZA"), rand=n=>"R"+fmt(n);
 const sum=(a,f)=>a.reduce((n,x)=>n+f(x),0);
 const count=w=>Number(w.bookings||0);
 const growth=(n,p)=>p>0?((n-p)/p*100).toFixed(1)+"%":"—";
+function renderMonthly(){
+ const month=el("bpMonth").value, first=month+"-01", d=new Date(first+"T12:00:00Z");d.setUTCMonth(d.getUTCMonth()+1);const last=addDays(d.toISOString().slice(0,10),-1);
+ const start=addDays(first,-new Date(first+"T12:00:00Z").getUTCDay());
+ let total=0, html='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #8884"><strong>Week</strong><strong>Bookings</strong><strong>Income</strong></div>';
+ for(let ws=start;ws<=last;ws=addDays(ws,7)){
+ const from=ws<first?first:ws,end=addDays(ws,6),to=end>last?last:end,w=rows.find(x=>x.week_start===ws);
+ const n=w?sum((w.classes||[]).filter(c=>c.date>=from&&c.date<=to),c=>Number(c.booked||0)):null;
+ if(n!==null)total+=n;
+ html+='<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid #8884"><strong>'+shortWeekLabel(from)+' – '+shortWeekLabel(to)+'</strong><span>'+(n===null?'—':fmt(n))+'</span><span>Unavailable</span></div>';
+ }
+ el("bpMonthly").innerHTML='<h3>Monthly bookings &amp; income</h3>'+html+'<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:14px 0"><strong>Month total</strong><strong>'+fmt(total)+'</strong><strong>Unavailable</strong></div><p class="bp-note">Sunday–Saturday weeks clipped to the selected month. Includes advance bookings where available. Income requires verified payment data.</p>';
+}
 function render(){
+ renderMonthly();
  const current=currentBookingWeek(), period=el("bpPeriod").value, now=today();
  const past=rows.filter(w=>w.week_start<=current);
  const selected=period==="all"?past:period==="month"?past:past.filter(w=>w.week_start===(period==="last"?addDays(current,-7):current));
@@ -294,9 +307,9 @@ function render(){
  }
  async function load(){
  el("bpStatus").textContent="Refreshing…";el("bpExport").disabled=true;
- try{const b=await api("/api/admin/booking-weeks?weeks=16");rows=(b.weeks||[]).filter(w=>w.week_start>=opening);try{payroll=(await api("/api/admin/pay-history?weeks=16")).weeks||[];}catch(e){payroll=[];}loaded=true;render();el("bpStatus").textContent="Bookings refreshed "+new Date().toLocaleTimeString("en-ZA")+" · payment data unavailable";el("bpExport").disabled=false;}catch(e){el("bpStatus").textContent="Unable to refresh booking data. "+(loaded?"Showing last loaded figures.":"Please retry.");}
+ try{const b=await api("/api/admin/booking-weeks?weeks=16&through=2027-01-30");rows=(b.weeks||[]).filter(w=>w.week_start>=opening);try{payroll=(await api("/api/admin/pay-history?weeks=16")).weeks||[];}catch(e){payroll=[];}loaded=true;render();el("bpStatus").textContent="Bookings refreshed "+new Date().toLocaleTimeString("en-ZA")+" · payment data unavailable";el("bpExport").disabled=false;}catch(e){el("bpStatus").textContent="Unable to refresh booking data. "+(loaded?"Showing last loaded figures.":"Please retry.");}
  }
- el("bpPeriod").onchange=()=>{if(loaded)render();};el("bpRefresh").onclick=load;
+ el("bpMonth").value=today().slice(0,7);el("bpMonth").onchange=()=>{if(loaded)renderMonthly();};el("bpPeriod").onchange=()=>{if(loaded)render();};el("bpRefresh").onclick=load;
  el("bpExport").onclick=()=>{const lines=["week_start,week_end,booked_seats,actual_turnover_zar",...rows.filter(w=>w.week_start<=currentBookingWeek()).map(w=>[w.week_start,addDays(w.week_start,6),count(w),""].join(","))];const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));const a=document.createElement("a");a.href=url;a.download="spinning-kartel-weekly.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
  if(TOKEN)load();
 })();
